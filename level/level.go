@@ -39,17 +39,53 @@ var (
 	TileStairsUp   = Tile{'<', true, nil}
 	TileStairsDown = Tile{'>', true, nil}
 
-	TileNil  = Tile{' ', false, nil}
-	TileWall = Tile{'#', false, nil}
+	TileNil = Tile{' ', false, nil}
 
-	DirNorth = 1
-	DirEast  = 2
-	DirSouth = 3
-	DirWest  = 4
+	TileSideWall          = Tile{'│', false, nil}
+	TileTopWall           = Tile{'─', false, nil}
+	TileTopLeftCorner     = Tile{'┌', false, nil}
+	TileTopRightCorner    = Tile{'┐', false, nil}
+	TileBottomLeftCorner  = Tile{'└', false, nil}
+	TileBottomRightCorner = Tile{'┘', false, nil}
+
+	DirNorth = 0
+	DirEast  = 1
+	DirSouth = 2
+	DirWest  = 3
 )
 
-func NewPosition(x int, y int, width int, height int) *Position {
-	return &Position{X: x, Y: y, Width: width, Height: height}
+//Corner positions
+func (r *Room) TopLeftCornerPos() *Position {
+	return &Position{r.Pos.X, r.Pos.Y, 1, 1}
+}
+
+func (r *Room) TopRightCornerPos() *Position {
+	return &Position{(r.Pos.X + r.Pos.Width), r.Pos.Y, 1, 1}
+}
+
+func (r *Room) BottomLeftCornerPos() *Position {
+	return &Position{r.Pos.X, (r.Pos.Y + r.Pos.Height), 1, 1}
+}
+
+func (r *Room) BottomRightCornerPos() *Position {
+	return &Position{(r.Pos.X + r.Pos.Width), (r.Pos.Y + r.Pos.Height), 1, 1}
+}
+
+//Wall positions
+func (r *Room) MiddleWallNorthPos() *Position {
+	return &Position{(r.Pos.X + (r.Pos.Width / 2)), r.Pos.Y, 1, 1}
+}
+
+func (r *Room) MiddleWallEastPos() *Position {
+	return &Position{(r.Pos.X + r.Pos.Width), (r.Pos.Y + (r.Pos.Y / 2)), 1, 1}
+}
+
+func (r *Room) MiddleWallSouthPos() *Position {
+	return &Position{(r.Pos.X + (r.Pos.Width / 2)), (r.Pos.Y + r.Pos.Height), 1, 1}
+}
+
+func (r *Room) MiddleWallWestPos() *Position {
+	return &Position{r.Pos.X, r.Pos.Y + (r.Pos.Height / 2), 1, 1}
 }
 
 func MakeFloor(width int, height int, defaultTile *Tile) [][]*Tile {
@@ -65,140 +101,110 @@ func MakeFloor(width int, height int, defaultTile *Tile) [][]*Tile {
 	return floor
 }
 
-func (l *Level) EnsureInsideLevel(r *Room) bool {
-	if ((r.Pos.X + r.Pos.Width) > l.Width-1) || ((r.Pos.Y + r.Pos.Height) > l.Height-1) {
+func (p *Position) IsPosInsideLevel(l *Level) bool {
+	if (p.X+p.Width) > l.Width-2 || (p.Y+p.Height) > l.Height-2 || p.X <= 2 || p.Y <= 2 {
 		return false
 	}
 	return true
 }
 
-func (l *Level) RoomIsOverlapping(r *Room) bool {
-	for x := r.Pos.X; x < r.Pos.Width; x++ {
-		for y := r.Pos.Y; y < r.Pos.Height; y++ {
-			if l.Map[x][y] != &TileNil {
-				return true
-			}
+func (l *Level) IsInsideRoom(r *Room) bool {
+	for _, r2 := range l.Rooms {
+		if r.Pos.X < (r2.Pos.X+r2.Pos.Width) &&
+			(r.Pos.X+r.Pos.Width) > r2.Pos.X &&
+			r.Pos.Y < (r2.Pos.Y+r2.Pos.Height) &&
+			(r.Pos.Y+r.Pos.Height) > r2.Pos.Y {
+			return true
 		}
 	}
 	return false
 }
 
-func (l *Level) RandomDoor(r *Room) {
-	direction := dice.MakeDie(1, 4).Roll()
-	switch direction {
-	case 1: //North
-		maxX := (r.Pos.X + r.Pos.Width)
-		x := dice.MakeDie(r.Pos.X+1, maxX-1).Roll()
-		l.Map[x][r.Pos.Y] = &TileDoor
-		break
-	case 2: //East
-		maxY := (r.Pos.Y + r.Pos.Height)
-		y := dice.MakeDie(r.Pos.Y+1, maxY-1).Roll()
-		l.Map[r.Pos.X][y] = &TileDoor
-		break
-	case 3: //South
-		maxX := (r.Pos.X + r.Pos.Width)
-		x := dice.MakeDie(r.Pos.X+1, maxX-1).Roll()
-		l.Map[x][r.Pos.Y+r.Pos.Height] = &TileDoor
-		break
-	case 4: //West
-		maxY := (r.Pos.Y + r.Pos.Height)
-		y := dice.MakeDie(r.Pos.Y+1, maxY-1).Roll()
-		l.Map[r.Pos.X][y] = &TileDoor
-		break
-	}
-}
-
-func (l *Level) SetWalls(r *Room) {
-	//North
-	for x := r.Pos.X; x < (r.Pos.X + r.Pos.Width); x++ {
-		l.Map[x][r.Pos.Y] = &TileWall
-	}
-	//East
-	for y := r.Pos.Y; y < (r.Pos.Y + r.Pos.Height); y++ {
-		l.Map[r.Pos.X][y] = &TileWall
-	}
-	//South
-	for x := r.Pos.X; x < (r.Pos.X + r.Pos.Width + 1); x++ {
-		l.Map[x][(r.Pos.Y + r.Pos.Height)] = &TileWall
-	}
-	//West
-	for y := r.Pos.Y; y < (r.Pos.Y + r.Pos.Height); y++ {
-		l.Map[(r.Pos.X + r.Pos.Width)][y] = &TileWall
-	}
-}
-
-func (l *Level) PosToRoom(x int, y int) *Room {
+func (l *Level) PosToRoom(p *Position) *Room {
 	for _, r := range l.Rooms {
-		for i := r.Pos.X; i < (r.Pos.X + r.Pos.Width); i++ {
-			for j := r.Pos.Y; j < (r.Pos.Y + r.Pos.Height); j++ {
-				if x >= r.Pos.X && x < (r.Pos.X+r.Pos.Width) && y >= r.Pos.Y && y < (r.Pos.Y+r.Pos.Height) {
-					return r
-				}
-			}
+		if l.IsInsideRoom(r) == true {
+			return r
 		}
 	}
 	return nil
 }
 
-func (l *Level) PosHasNeighbors(x int, y int) bool {
-	if l.Map[x+1][y] != &TileNil || l.Map[x][y+1] != &TileNil ||
-		l.Map[x+1][y+1] != &TileNil {
-		return true
-	}
-	if l.Map[x-1][y] != &TileNil || l.Map[x][y-1] != &TileNil ||
-		l.Map[x-1][y-1] != &TileNil {
-		return true
-	}
-	return false
+func (l *Level) CoordinatesToRoom(x int, y int) *Room {
+	p := &Position{x, y, 1, 1}
+	return l.PosToRoom(p)
 }
 
-func (l *Level) DoesRoomFit(r *Room) bool {
-	if l.EnsureInsideLevel(r) == false {
-		return false
+func (l *Level) PlaceWalls(r *Room) {
+	//North
+	for x := r.Pos.X; x < (r.Pos.X + r.Pos.Width); x++ {
+		l.Map[x][r.Pos.Y] = &TileTopWall
 	}
-	for i := r.Pos.X; i < (r.Pos.X + r.Pos.Width); i++ {
-		for j := r.Pos.Y; j < (r.Pos.Y + r.Pos.Height); j++ {
-			if l.Map[i][j] != &TileNil {
-				return false
-			}
-		}
+	//East
+	for y := r.Pos.Y; y < (r.Pos.Y + r.Pos.Height); y++ {
+		l.Map[(r.Pos.X + r.Pos.Width)][y] = &TileSideWall
 	}
-	return true
+	//South
+	for x := r.Pos.X; x < (r.Pos.X + r.Pos.Width); x++ {
+		l.Map[x][(r.Pos.Y + r.Pos.Height)] = &TileTopWall
+	}
+	//West
+	for y := r.Pos.Y; y < (r.Pos.Y + r.Pos.Height); y++ {
+		l.Map[r.Pos.X][y] = &TileSideWall
+	}
+
+	topLeft := r.TopLeftCornerPos()
+	l.Map[topLeft.X][topLeft.Y] = &TileTopLeftCorner
+
+	topRight := r.TopRightCornerPos()
+	l.Map[topRight.X][topRight.Y] = &TileTopRightCorner
+
+	bottomLeft := r.BottomLeftCornerPos()
+	l.Map[bottomLeft.X][bottomLeft.Y] = &TileBottomLeftCorner
+
+	bottomRight := r.BottomRightCornerPos()
+	l.Map[bottomRight.X][bottomRight.Y] = &TileBottomRightCorner
+}
+
+func (l Level) PlaceDoor(r *Room) {
+	walls := []*Position{r.MiddleWallNorthPos(), r.MiddleWallEastPos(), r.MiddleWallSouthPos(), r.MiddleWallWestPos()}
+	side := walls[RandomDirection()]
+	l.Map[side.X][side.Y] = &TileDoor
 }
 
 func RandomDirection() int {
-	return dice.MakeDie(DirNorth, DirWest).Roll()
+	return dice.MakeDie(0, DirWest).Roll()
 }
 
 func (l *Level) GetRandomRoom(r *Room) *Room {
 	return l.Rooms[dice.MakeDie(0, len(l.Rooms)).Roll()]
 }
 
-func (l *Level) MakeRandomRoom() *Room {
-	pos := NewPosition(dice.MakeDie(2, l.Width).Roll(),
-		dice.MakeDie(2, l.Height).Roll(),
-		dice.MakeDie(3, 10).Roll(),
-		dice.MakeDie(3, 10).Roll())
-	r := &Room{Pos: pos}
-	for {
-		if l.RoomIsOverlapping(r) == false && l.EnsureInsideLevel(r) == true && l.DoesRoomFit(r) == true {
-			log.Printf("Found position for room [X:%d/Y:%d] %d/%d", r.Pos.X, r.Pos.Y, r.Pos.Width, r.Pos.Height)
-			break
-		} else {
-			r.Pos.X = dice.MakeDie(2, l.Width-2).Roll()
-			r.Pos.Y = dice.MakeDie(2, l.Height-2).Roll()
-			r.Pos.Width = dice.MakeDie(4, 8).Roll()
-			r.Pos.Height = dice.MakeDie(4, 8).Roll()
-		}
-	}
+func (l *Level) PlaceRoom(r *Room) {
 	for i := r.Pos.X; i < (r.Pos.X + r.Pos.Width); i++ {
 		for j := r.Pos.Y; j < (r.Pos.Y + r.Pos.Height); j++ {
 			l.Map[i][j] = &TileFloor
 		}
 	}
-	l.SetWalls(r)
-	l.RandomDoor(r)
+}
+func (l *Level) GenerateRandomRoom() *Room {
+	pos := &Position{X: dice.MakeDie(2, l.Width).Roll(),
+		Y:      dice.MakeDie(2, l.Height).Roll(),
+		Width:  dice.MakeDie(6, 10).RollEven(),
+		Height: dice.MakeDie(6, 10).RollEven()}
+	r := &Room{Pos: pos}
+	for {
+		if r.Pos.IsPosInsideLevel(l) == true && l.IsInsideRoom(r) == false {
+			log.Printf("Found position for room [X:%d/Y:%d] %d/%d", r.Pos.X, r.Pos.Y, r.Pos.Width, r.Pos.Height)
+			break
+		} else {
+			r.Pos.X = dice.MakeDie(2, l.Width).Roll()
+			r.Pos.Y = dice.MakeDie(2, l.Height).Roll()
+			r.Pos.Width = dice.MakeDie(6, 10).Roll()
+			r.Pos.Height = dice.MakeDie(6, 10).Roll()
+		}
+	}
+	l.PlaceRoom(r)
+	l.PlaceWalls(r)
 	return r
 }
 
@@ -211,7 +217,7 @@ func MakeLevel(maxRooms int, width int, height int) *Level {
 		Rooms:    nil}
 	l.Map = MakeFloor(width, height, &TileNil)
 	for i := 0; i < maxRooms; i++ {
-		l.Rooms = append(l.Rooms, l.MakeRandomRoom())
+		l.Rooms = append(l.Rooms, l.GenerateRandomRoom())
 	}
 	return l
 }

@@ -18,8 +18,34 @@ var (
 	D20 = Die{1, 20}
 )
 
+func Even(number int) bool {
+	return number%2 == 0
+}
+
 func MakeDie(min int, max int) *Die {
 	return &Die{min, max}
+}
+
+func (d *Die) RollEven() int {
+	var num int
+	for {
+		num = d.Roll()
+		if Even(num) == true {
+			break
+		}
+	}
+	return num
+}
+
+func (d *Die) RollOdd() int {
+	var num int
+	for {
+		num = d.Roll()
+		if Even(num) == false {
+			break
+		}
+	}
+	return num
 }
 
 func (d *Die) Roll() int {
