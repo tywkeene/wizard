@@ -52,6 +52,11 @@ var (
 	DirEast  = 1
 	DirSouth = 2
 	DirWest  = 3
+
+	MinRoomWidth  = 6
+	MaxRoomWidth  = 10
+	MinRoomHeight = 6
+	MaxRoomHeight = 10
 )
 
 //Corner positions
@@ -189,8 +194,8 @@ func (l *Level) PlaceRoomFloor(r *Room) {
 func (l *Level) GenerateRandomRoom() *Room {
 	pos := &Position{X: dice.MakeDie(2, l.Width).Roll(),
 		Y:      dice.MakeDie(2, l.Height).Roll(),
-		Width:  dice.MakeDie(4, 10).RollEven(),
-		Height: dice.MakeDie(4, 10).RollEven()}
+		Width:  dice.MakeDie(MinRoomWidth, MaxRoomWidth).RollEven(),
+		Height: dice.MakeDie(MinRoomHeight, MaxRoomHeight).RollEven()}
 	r := &Room{Pos: pos}
 	for {
 		if l.IsPosInsideLevel(r.Pos) == true && l.IsInsideRoom(r) == false {
@@ -199,8 +204,8 @@ func (l *Level) GenerateRandomRoom() *Room {
 		} else {
 			r.Pos.X = dice.MakeDie(2, l.Width).Roll()
 			r.Pos.Y = dice.MakeDie(2, l.Height).Roll()
-			r.Pos.Width = dice.MakeDie(6, 10).Roll()
-			r.Pos.Height = dice.MakeDie(6, 10).Roll()
+			r.Pos.Width = dice.MakeDie(MinRoomWidth, MaxRoomWidth).Roll()
+			r.Pos.Height = dice.MakeDie(MinRoomHeight, MaxRoomHeight).Roll()
 		}
 	}
 	l.PlaceRoomFloor(r)
