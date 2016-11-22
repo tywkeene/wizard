@@ -10,7 +10,7 @@ import (
 	"log"
 )
 
-type Game struct {
+type GameState struct {
 	Running      bool
 	Events       chan termbox.Event
 	CurrentLevel *level.Level
@@ -19,47 +19,48 @@ type Game struct {
 	Player       *monster.Monster
 }
 
-var GameState *Game
+var State *GameState
 
-func newGame() *Game {
-	return &Game{true, make(chan termbox.Event), nil, nil, nil, nil}
+func NewGameState() *GameState {
+	return &GameState{true, make(chan termbox.Event), nil, nil, nil, nil}
 }
 
-func (g *Game) StartEventRoutine() {
-	go func(g *Game) {
+func (g *GameState) StartEventRoutine() {
+	go func(g *GameState) {
 		for {
 			g.Events <- termbox.PollEvent()
 		}
 	}(g)
 }
 
-func (g *Game) UpdateState() {
-	g.CurrentLevel.DrawMap()
+func (g *GameState) UpdateState() {
+	g.CurrentLevel.UpdateMap()
 	termbox.Flush()
 	g.MessageLine.Clear()
 	g.PlayerStatus.Clear()
 }
 
-func (g *Game) mainLoop() {
+func (g *GameState) mainLoop() {
 	g.MessageLine.Println("Welcome to wizard!")
 	for g.Running == true {
 		g.UpdateState()
+		playerPos := g.Player.GetPosition()
 		select {
 		case ev := <-g.Events:
 			switch {
 			case ev.Key == termbox.KeyEsc || ev.Key == termbox.KeyCtrlC:
 				g.Running = false
 			case ev.Ch == 'k': //up
-				g.Player.Move(g.Player.X, g.Player.Y-1)
+				g.Player.Move(playerPos.X, playerPos.Y-1)
 				break
 			case ev.Ch == 'j': //down
-				g.Player.Move(g.Player.X, g.Player.Y+1)
+				g.Player.Move(playerPos.X, playerPos.Y+1)
 				break
 			case ev.Ch == 'h': //left
-				g.Player.Move(g.Player.X-1, g.Player.Y)
+				g.Player.Move(playerPos.X-1, playerPos.Y)
 				break
 			case ev.Ch == 'l': //right
-				g.Player.Move(g.Player.X+1, g.Player.Y)
+				g.Player.Move(playerPos.X+1, playerPos.Y)
 				break
 			}
 		}
@@ -73,8 +74,8 @@ func init() {
 		panic(err)
 	}
 	log.Println("Initializng game state...")
-	GameState = newGame()
-	GameState.StartEventRoutine()
+	State = NewGameState()
+	State.StartEventRoutine()
 	log.Println("Intitializing RNG...")
 	dice.Init()
 
@@ -82,24 +83,24 @@ func init() {
 	log.Printf("Got terminal size: [%dx%d]...\n", width, height)
 
 	log.Println("Initializing Message Line (Top)...")
-	GameState.MessageLine = status.MakeStatusLine(0, 0, width)
-	GameState.MessageLine.Clear()
+	State.MessageLine = status.MakeStatusLine(0, 0, width)
+	State.MessageLine.Clear()
 
 	log.Println("Initializing Player Status (Bottom)...")
-	GameState.PlayerStatus = status.MakeStatusLine(0, height-1, width)
-	GameState.PlayerStatus.Clear()
+	State.PlayerStatus = status.MakeStatusLine(0, height-1, width)
+	State.PlayerStatus.Clear()
 
 	levelWidth := (width - 1)
 	levelHeight := (height - 1)
 	roomCount := 10
-	GameState.CurrentLevel = level.MakeLevel(roomCount, levelWidth, levelHeight)
+	State.CurrentLevel = level.MakeLevel(roomCount, levelWidth, levelHeight)
 
-	stats := &monster.Status{Lvl: 1, Exp: 0, Hp: 25, Str: 12}
-	GameState.Player = monster.MakeMonster(0, 0, "wizard", '@', stats)
+	State.Player = monster.MakeMonster(5, 5, "wizard", '@', 1)
+	State.CurrentLevel.AddEntity(State.Player)
 }
 
 func main() {
 	defer termbox.Close()
-	GameState.mainLoop()
+	State.mainLoop()
 	log.Println("Main loop exited\n")
 }
