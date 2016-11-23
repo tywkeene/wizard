@@ -10,6 +10,12 @@ import (
 	"log"
 )
 
+type Path struct {
+	From      *position.Position
+	To        *position.Position
+	Direction int
+}
+
 type Tile struct {
 	Symbol   rune
 	Passable bool
@@ -45,6 +51,13 @@ var (
 	DirSouth = 2
 	DirWest  = 3
 
+	DirectionStrings = map[int]string{
+		0: "North",
+		1: "East",
+		2: "South",
+		3: "West",
+	}
+
 	MinMapWidth  = 2
 	MinMapHeight = 2
 
@@ -53,6 +66,10 @@ var (
 	MinRoomHeight = 4
 	MaxRoomHeight = 10
 )
+
+func DirectionString(direction int) string {
+	return DirectionStrings[direction]
+}
 
 func MakeFloor(width int, height int, defaultTile *Tile) [][]*Tile {
 	floor := make([][]*Tile, width)
@@ -68,7 +85,7 @@ func MakeFloor(width int, height int, defaultTile *Tile) [][]*Tile {
 }
 
 func (l *Level) IsPosInsideLevel(p *position.Position) bool {
-	if (p.X+p.Width) < l.Width-2 && (p.Y+p.Height) < l.Height-2 && p.X >= 2 && p.Y >= 2 {
+	if (p.X+p.Width) < l.Width && (p.Y+p.Height) < l.Height && p.X >= 0 && p.Y >= 0 {
 		return true
 	}
 	return false
@@ -93,11 +110,6 @@ func (l *Level) PosToRoom(p *position.Position) *room.Room {
 		}
 	}
 	return nil
-}
-
-func (l *Level) CoordinatesToRoom(x int, y int) *room.Room {
-	p := &position.Position{-1, -1, x, y, 1, 1}
-	return l.PosToRoom(p)
 }
 
 func (l *Level) PlaceRoomWalls(r *room.Room) {
@@ -130,32 +142,12 @@ func (l *Level) PlaceRoomWalls(r *room.Room) {
 	}
 }
 
-func (l Level) PlaceRoomDoor(r *room.Room) {
-	var side *position.Position
-	walls := []*position.Position{r.MiddleWallNorthPos(), r.MiddleWallEastPos(), r.MiddleWallSouthPos(), r.MiddleWallWestPos()}
-	for direction, side := range walls {
-		if l.DoesPosHaveWall(side, direction) == false {
-			break
-		}
-		log.Printf("Direction %d has wall @ Position: [x:%d/y:%d]", direction, side.X, side.Y)
-	}
-	l.Map[side.X][side.Y] = &TileDoor
-}
-
 func GetRandomDirection() int {
-	return dice.MakeDie(0, DirWest).Roll()
+	return dice.MakeDie(DirNorth, DirWest).Roll()
 }
 
 func (l *Level) GetRandomRoom(r *room.Room) *room.Room {
 	return l.Rooms[dice.MakeDie(0, len(l.Rooms)).Roll()]
-}
-
-func (l *Level) PlaceRoomFloor(r *room.Room) {
-	for x := r.Pos.X; x < (r.Pos.X + r.Pos.Width); x++ {
-		for y := r.Pos.Y; y < (r.Pos.Y + r.Pos.Height); y++ {
-			l.Map[x][y] = &TileFloor
-		}
-	}
 }
 
 func (l *Level) DoesPosHaveWall(p *position.Position, direction int) bool {
@@ -194,11 +186,35 @@ func (l *Level) DoesPosHaveWall(p *position.Position, direction int) bool {
 	return false
 }
 
-func (l *Level) GenerateRandomRoom() *room.Room {
-	pos := &position.Position{X: dice.MakeDie(MinMapWidth, l.Width).RollEven(),
-		Y:      dice.MakeDie(MinMapHeight, l.Height).RollEven(),
-		Width:  dice.MakeDie(MinRoomWidth, MaxRoomWidth).Roll(),
-		Height: dice.MakeDie(MinRoomHeight, MaxRoomHeight).Roll()}
+func (l Level) PlaceRoomDoor(r *room.Room) {
+	var side *position.Position
+	var direction int
+
+	walls := []*position.Position{r.MiddleWallNorthPos(), r.MiddleWallEastPos(),
+		r.MiddleWallSouthPos(), r.MiddleWallWestPos()}
+
+	for direction, side = range walls {
+		if l.DoesPosHaveWall(side, direction) == false {
+			break
+		}
+		log.Printf("Direction %d has wall @ Position: [x:%d/y:%d]", direction, side.X, side.Y)
+	}
+	l.Map[side.X][side.Y] = &TileDoor
+}
+
+func (l *Level) PlaceRoomFloor(r *room.Room) {
+	for x := r.Pos.X; x < (r.Pos.X + r.Pos.Width); x++ {
+		for y := r.Pos.Y; y < (r.Pos.Y + r.Pos.Height); y++ {
+			l.Map[x][y] = &TileFloor
+		}
+	}
+}
+
+func (l *Level) GenerateRandomRoom(x int, y int) *room.Room {
+	pos := &position.Position{X: x,
+		Y:      y,
+		Width:  dice.MakeDie(MinRoomWidth, MaxRoomWidth).RollEven(),
+		Height: dice.MakeDie(MinRoomHeight, MaxRoomHeight).RollEven()}
 	r := &room.Room{Pos: pos}
 	wontFit := 0
 	for {
@@ -212,9 +228,7 @@ func (l *Level) GenerateRandomRoom() *room.Room {
 			return nil
 		}
 	}
-	log.Printf("New room @ [x:%d/y:%d] Size:[%dx%d]", r.Pos.X, r.Pos.Y, pos.Width, pos.Height)
-	l.PlaceRoomWalls(r)
-	l.PlaceRoomFloor(r)
+	log.Printf("New room @ [X:%d/Y:%d] Size:[%dx%d]", r.Pos.X, r.Pos.Y, pos.Width, pos.Height)
 	return r
 }
 
@@ -223,10 +237,22 @@ func MakeLevel(maxRooms int, width int, height int) *Level {
 		Entities: nil, Map: nil, Rooms: nil}
 	l.Map = MakeFloor(width, height, &TileNil)
 	for i := 0; i < maxRooms; i++ {
-		if r := l.GenerateRandomRoom(); r != nil {
+		r := l.GenerateRandomRoom(dice.MakeDie(2, l.Width).Roll(),
+			dice.MakeDie(2, l.Height).Roll())
+		if r != nil {
 			l.Rooms = append(l.Rooms, r)
-			l.PlaceRoomWalls(r)
-			l.PlaceRoomFloor(r)
+		}
+	}
+	for _, r := range l.Rooms {
+		l.PlaceRoomFloor(r)
+		l.PlaceRoomWalls(r)
+		l.PlaceRoomDoor(r)
+	}
+	for x := 1; x < l.Width; x++ {
+		for y := 1; y < l.Height; y++ {
+			if l.Map[x][y] == &TileNil {
+				l.Map[x][y] = &TileFloor
+			}
 		}
 	}
 	return l
@@ -239,7 +265,9 @@ func (l *Level) AddEntity(e entity.Entity) {
 func (l *Level) CheckEntityCollision() {
 	for _, e := range l.Entities {
 		entityPos := e.GetPosition()
-		if l.IsPosInsideLevel(entityPos) == false || l.Map[entityPos.X][entityPos.Y] != &TileFloor {
+		tile := l.Map[entityPos.X][entityPos.Y]
+		if l.IsPosInsideLevel(entityPos) == false ||
+			tile.Passable == false {
 			entityPos.X = entityPos.PrevX
 			entityPos.Y = entityPos.PrevY
 		}

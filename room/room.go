@@ -3,7 +3,18 @@ package room
 import "github.com/tywkeene/wizard/position"
 
 type Room struct {
-	Pos *position.Position
+	Pos     *position.Position
+	Nearest *position.Position
+}
+
+func (r *Room) DirectionToWallPosition(direction int) *position.Position {
+	walls := map[int]*position.Position{
+		0: r.MiddleWallNorthPos(),
+		1: r.MiddleWallEastPos(),
+		2: r.MiddleWallSouthPos(),
+		3: r.MiddleWallWestPos(),
+	}
+	return walls[direction]
 }
 
 //Corner positions

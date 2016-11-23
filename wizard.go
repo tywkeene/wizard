@@ -92,10 +92,10 @@ func init() {
 
 	levelWidth := (width - 1)
 	levelHeight := (height - 1)
-	roomCount := 10
+	roomCount := 25
 	State.CurrentLevel = level.MakeLevel(roomCount, levelWidth, levelHeight)
 
-	State.Player = monster.MakeMonster(5, 5, "wizard", '@', 1)
+	State.Player = monster.MakeMonster(5, 5, "wizard", '@')
 	State.CurrentLevel.AddEntity(State.Player)
 }
 

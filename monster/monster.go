@@ -9,13 +9,12 @@ type Monster struct {
 	Pos    *position.Position
 	Name   string
 	Symbol rune
-	Index  int
 }
 
-func MakeMonster(x int, y int, name string, symbol rune, index int) *Monster {
+func MakeMonster(x int, y int, name string, symbol rune) *Monster {
 	log.Printf("Initialized monster at position [%d:%d]: (%s) (%s)", x, y, name, string(symbol))
 	pos := position.NewPosition(-1, -1, x, y, 1, 1)
-	return &Monster{Pos: pos, Name: name, Symbol: symbol, Index: index}
+	return &Monster{Pos: pos, Name: name, Symbol: symbol}
 }
 
 func (m *Monster) Move(newX int, newY int) {
@@ -35,8 +34,4 @@ func (m *Monster) GetSymbol() rune {
 
 func (m *Monster) GetName() string {
 	return m.Name
-}
-
-func (m *Monster) GetIndex() int {
-	return m.Index
 }
