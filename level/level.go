@@ -84,8 +84,15 @@ func MakeFloor(width int, height int, defaultTile *Tile) [][]*Tile {
 	return floor
 }
 
-func (l *Level) IsPosInsideLevel(p *position.Position) bool {
-	if (p.X+p.Width) < l.Width && (p.Y+p.Height) < l.Height && p.X >= 0 && p.Y >= 0 {
+func (l *Level) IsPositionInsideLevel(p *position.Position) bool {
+	if p.X < l.Width && p.Y < l.Height && p.X > 0 && p.Y > 0 {
+		return true
+	}
+	return false
+}
+
+func (l *Level) IsRoomInsideLevel(r *room.Room) bool {
+	if (r.Pos.X+r.Pos.Width) < l.Width-2 && (r.Pos.Y+r.Pos.Height) < l.Height-2 && r.Pos.X >= 0 && r.Pos.Y >= 0 {
 		return true
 	}
 	return false
@@ -218,7 +225,7 @@ func (l *Level) GenerateRandomRoom(x int, y int) *room.Room {
 	r := &room.Room{Pos: pos}
 	wontFit := 0
 	for {
-		if l.IsInsideRoom(r.Pos) == false && l.IsPosInsideLevel(r.Pos) == true {
+		if l.IsInsideRoom(r.Pos) == false && l.IsRoomInsideLevel(r) == true {
 			break
 		}
 		r.Pos.X = dice.MakeDie(MinMapWidth, l.Width).Roll()
@@ -262,12 +269,20 @@ func (l *Level) AddEntity(e entity.Entity) {
 	l.Entities = append(l.Entities, e)
 }
 
-func (l *Level) CheckEntityCollision() {
+func (l *Level) CheckCollision(p *position.Position) bool {
+	if l.IsPositionInsideLevel(p) == false {
+		return true
+	}
+	if tile := l.Map[p.X][p.Y]; tile.Passable == false {
+		return true
+	}
+	return false
+}
+
+func (l *Level) CheckEntityCollisions() {
 	for _, e := range l.Entities {
 		entityPos := e.GetPosition()
-		tile := l.Map[entityPos.X][entityPos.Y]
-		if l.IsPosInsideLevel(entityPos) == false ||
-			tile.Passable == false {
+		if l.CheckCollision(entityPos) == true {
 			entityPos.X = entityPos.PrevX
 			entityPos.Y = entityPos.PrevY
 		}
@@ -293,6 +308,6 @@ func (l *Level) DrawMap() {
 
 func (l *Level) UpdateMap() {
 	l.DrawMap()
-	l.CheckEntityCollision()
+	l.CheckEntityCollisions()
 	l.DrawEntities()
 }
