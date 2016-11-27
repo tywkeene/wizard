@@ -19,7 +19,11 @@ type GameState struct {
 	Player       *monster.Monster
 }
 
-var State *GameState
+var (
+	State       *GameState
+	LevelWidth  int
+	LevelHeight int
+)
 
 func NewGameState() *GameState {
 	return &GameState{true, make(chan termbox.Event), nil, nil, nil, nil}
@@ -62,6 +66,10 @@ func (g *GameState) mainLoop() {
 			case ev.Ch == 'l': //right
 				g.Player.Move(playerPos.X+1, playerPos.Y)
 				break
+			case ev.Key == termbox.KeyF12: //Regen map
+				g.CurrentLevel = level.MakeLevel(20, LevelWidth, LevelHeight)
+				g.CurrentLevel.AddEntity(State.Player)
+				break
 			}
 		}
 	}
@@ -90,12 +98,12 @@ func init() {
 	State.PlayerStatus = status.MakeStatusLine(0, height-1, width)
 	State.PlayerStatus.Clear()
 
-	levelWidth := (width - 1)
-	levelHeight := (height - 1)
-	roomCount := 25
-	State.CurrentLevel = level.MakeLevel(roomCount, levelWidth, levelHeight)
+	LevelWidth = (width - 1)
+	LevelHeight = (height - 1)
+	roomCount := 20
+	State.CurrentLevel = level.MakeLevel(roomCount, LevelWidth, LevelHeight)
 
-	State.Player = monster.MakeMonster(5, 5, "wizard", '@')
+	State.Player = monster.MakeMonster(1, 1, "wizard", '@')
 	State.CurrentLevel.AddEntity(State.Player)
 }
 

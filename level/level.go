@@ -45,30 +45,54 @@ var (
 	TileTopRightCorner    = Tile{'┐', false, nil}
 	TileBottomLeftCorner  = Tile{'└', false, nil}
 	TileBottomRightCorner = Tile{'┘', false, nil}
+)
 
+const (
 	DirNorth = 0
 	DirEast  = 1
 	DirSouth = 2
 	DirWest  = 3
 
-	DirectionStrings = map[int]string{
-		0: "North",
-		1: "East",
-		2: "South",
-		3: "West",
-	}
-
-	MinMapWidth  = 2
-	MinMapHeight = 2
+	MinMapWidth  = 3
+	MinMapHeight = 3
 
 	MinRoomWidth  = 4
-	MaxRoomWidth  = 10
 	MinRoomHeight = 4
-	MaxRoomHeight = 10
+
+	SmallRoomMax = 8
+
+	MediumRoomMax = 12
+
+	LargeRoomMax = 16
 )
 
-func DirectionString(direction int) string {
-	return DirectionStrings[direction]
+func RandomRoomSize() int {
+	size := dice.MakeDie(1, 4).Roll()
+	switch size {
+	case 1:
+		log.Println("Small room")
+		return SmallRoomMax
+		break
+	case 2:
+		log.Println("Medium room")
+		return MediumRoomMax
+		break
+	case 3:
+		log.Println("Large room")
+		return LargeRoomMax
+		break
+	}
+	return -1
+}
+
+func DirectionToString(direction int) string {
+	var directionStrings = map[int]string{
+		DirNorth: "North",
+		DirEast:  "East",
+		DirSouth: "South",
+		DirWest:  "West",
+	}
+	return directionStrings[direction]
 }
 
 func MakeFloor(width int, height int, defaultTile *Tile) [][]*Tile {
@@ -162,51 +186,61 @@ func (l *Level) DoesPosHaveWall(p *position.Position, direction int) bool {
 		&TileTopRightCorner, &TileBottomLeftCorner, &TileBottomRightCorner}
 	switch direction {
 	case DirNorth:
+		p.Y--
 		for _, wall := range wallTypes {
-			if l.Map[p.X][p.Y-1] == wall {
+			if l.Map[p.X][p.Y] == wall ||
+				l.IsPositionInsideLevel(p) == false {
 				return true
 			}
 		}
+		p.Y++
 		break
 	case DirEast:
+		p.X++
 		for _, wall := range wallTypes {
-			if l.Map[p.X+1][p.Y] == wall {
+			if l.Map[p.X][p.Y] == wall ||
+				l.IsPositionInsideLevel(p) == false {
 				return true
 			}
 		}
+		p.X--
 		break
 	case DirSouth:
+		p.Y++
 		for _, wall := range wallTypes {
-			if l.Map[p.X][p.Y+1] == wall {
+			if l.Map[p.X][p.Y] == wall ||
+				l.IsPositionInsideLevel(p) == false {
 				return true
 			}
 		}
+		p.Y--
 		break
 	case DirWest:
+		p.X--
 		for _, wall := range wallTypes {
-			if l.Map[p.X-1][p.Y] == wall {
+			if l.Map[p.X][p.Y] == wall ||
+				l.IsPositionInsideLevel(p) == false {
 				return true
 			}
 		}
+		p.X++
 		break
 	}
 	return false
 }
 
-func (l Level) PlaceRoomDoor(r *room.Room) {
-	var side *position.Position
+func (l *Level) PlaceRoomDoor(r *room.Room) {
 	var direction int
-
-	walls := []*position.Position{r.MiddleWallNorthPos(), r.MiddleWallEastPos(),
-		r.MiddleWallSouthPos(), r.MiddleWallWestPos()}
-
-	for direction, side = range walls {
-		if l.DoesPosHaveWall(side, direction) == false {
+	var p *position.Position
+	for {
+		direction = GetRandomDirection()
+		p = r.DirectionToWallPosition(direction)
+		if l.DoesPosHaveWall(p, direction) == false {
 			break
 		}
-		log.Printf("Direction %d has wall @ Position: [x:%d/y:%d]", direction, side.X, side.Y)
 	}
-	l.Map[side.X][side.Y] = &TileDoor
+	log.Printf("Placing door on %s wall @ [X:%d/Y:%d]", DirectionToString(direction), p.X, p.Y)
+	l.Map[p.X][p.Y] = &TileDoor
 }
 
 func (l *Level) PlaceRoomFloor(r *room.Room) {
@@ -218,10 +252,11 @@ func (l *Level) PlaceRoomFloor(r *room.Room) {
 }
 
 func (l *Level) GenerateRandomRoom(x int, y int) *room.Room {
+	roomSize := RandomRoomSize()
 	pos := &position.Position{X: x,
 		Y:      y,
-		Width:  dice.MakeDie(MinRoomWidth, MaxRoomWidth).RollEven(),
-		Height: dice.MakeDie(MinRoomHeight, MaxRoomHeight).RollEven()}
+		Width:  dice.MakeDie(MinRoomWidth, roomSize).RollEven(),
+		Height: dice.MakeDie(MinRoomHeight, roomSize).RollEven()}
 	r := &room.Room{Pos: pos}
 	wontFit := 0
 	for {
@@ -231,10 +266,12 @@ func (l *Level) GenerateRandomRoom(x int, y int) *room.Room {
 		r.Pos.X = dice.MakeDie(MinMapWidth, l.Width).Roll()
 		r.Pos.Y = dice.MakeDie(MinMapHeight, l.Height).Roll()
 		wontFit++
-		if wontFit == 100 {
+		if wontFit == 1000 {
 			return nil
 		}
 	}
+	l.PlaceRoomFloor(r)
+	l.PlaceRoomWalls(r)
 	log.Printf("New room @ [X:%d/Y:%d] Size:[%dx%d]", r.Pos.X, r.Pos.Y, pos.Width, pos.Height)
 	return r
 }
@@ -251,12 +288,10 @@ func MakeLevel(maxRooms int, width int, height int) *Level {
 		}
 	}
 	for _, r := range l.Rooms {
-		l.PlaceRoomFloor(r)
-		l.PlaceRoomWalls(r)
 		l.PlaceRoomDoor(r)
 	}
-	for x := 1; x < l.Width; x++ {
-		for y := 1; y < l.Height; y++ {
+	for x := 0; x < l.Width; x++ {
+		for y := 0; y < l.Height; y++ {
 			if l.Map[x][y] == &TileNil {
 				l.Map[x][y] = &TileFloor
 			}
