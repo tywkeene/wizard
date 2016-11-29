@@ -17,6 +17,7 @@ func main() {
 	startMenu.AddOption("Start Game", menu.StartMenuStartGame)
 	startMenu.AddOption("Exit", menu.StartMenuExitGame)
 	startMenu.Execute(gameState)
+	gameState.ClearTerminal()
 	gameState.MainLoop()
 	log.Println("Main loop exited\n")
 }

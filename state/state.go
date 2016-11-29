@@ -80,6 +80,14 @@ func (g *GameState) UpdateState() {
 	g.PlayerStatus.Clear()
 }
 
+func (g GameState) ClearTerminal() {
+	for x := 0; x < g.TerminalWidth; x++ {
+		for y := 0; y < g.TerminalHeight; y++ {
+			termbox.SetCell(x, y, ' ', termbox.ColorBlack, termbox.ColorBlack)
+		}
+	}
+}
+
 func (g *GameState) MainLoop() {
 	g.MessageLine.Println("Welcome to wizard!")
 	for g.Running == true {

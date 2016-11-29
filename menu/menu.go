@@ -86,7 +86,7 @@ func StartMenuInputHandle(s *state.GameState, m *Menu) {
 				}
 				break
 			case ev.Ch == 'j': //down
-				if cursorPos < len(m.Options) {
+				if cursorPos < len(m.Options)-1 {
 					cursorPos++
 				}
 				break
