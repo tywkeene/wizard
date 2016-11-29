@@ -11,9 +11,9 @@ type Monster struct {
 	Symbol rune
 }
 
-func MakeMonster(x int, y int, name string, symbol rune) *Monster {
-	log.Printf("Initialized monster at position [%d:%d]: (%s) (%s)", x, y, name, string(symbol))
-	pos := position.NewPosition(-1, -1, x, y, 1, 1)
+func MakeMonster(name string, symbol rune) *Monster {
+	log.Printf("Initialized monster: (%s) (%s)", name, string(symbol))
+	pos := position.NewPosition(-1, -1, -1, -1, 1, 1)
 	return &Monster{Pos: pos, Name: name, Symbol: symbol}
 }
 

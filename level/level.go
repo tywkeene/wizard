@@ -48,22 +48,22 @@ var (
 )
 
 const (
-	DirNorth = 0
-	DirEast  = 1
-	DirSouth = 2
-	DirWest  = 3
+	DirNorth = iota
+	DirEast
+	DirSouth
+	DirWest
+)
 
+const (
 	MinMapWidth  = 3
 	MinMapHeight = 3
 
 	MinRoomWidth  = 4
 	MinRoomHeight = 4
 
-	SmallRoomMax = 8
-
+	SmallRoomMax  = 8
 	MediumRoomMax = 12
-
-	LargeRoomMax = 16
+	LargeRoomMax  = 16
 )
 
 func RandomRoomSize() int {
@@ -186,44 +186,36 @@ func (l *Level) DoesPosHaveWall(p *position.Position, direction int) bool {
 		&TileTopRightCorner, &TileBottomLeftCorner, &TileBottomRightCorner}
 	switch direction {
 	case DirNorth:
-		p.Y--
 		for _, wall := range wallTypes {
-			if l.Map[p.X][p.Y] == wall ||
+			if l.Map[p.X][p.Y-1] == wall ||
 				l.IsPositionInsideLevel(p) == false {
 				return true
 			}
 		}
-		p.Y++
 		break
 	case DirEast:
-		p.X++
 		for _, wall := range wallTypes {
-			if l.Map[p.X][p.Y] == wall ||
+			if l.Map[p.X+1][p.Y] == wall ||
 				l.IsPositionInsideLevel(p) == false {
 				return true
 			}
 		}
-		p.X--
 		break
 	case DirSouth:
-		p.Y++
 		for _, wall := range wallTypes {
-			if l.Map[p.X][p.Y] == wall ||
+			if l.Map[p.X][p.Y+1] == wall ||
 				l.IsPositionInsideLevel(p) == false {
 				return true
 			}
 		}
-		p.Y--
 		break
 	case DirWest:
-		p.X--
 		for _, wall := range wallTypes {
-			if l.Map[p.X][p.Y] == wall ||
+			if l.Map[p.X-1][p.Y] == wall ||
 				l.IsPositionInsideLevel(p) == false {
 				return true
 			}
 		}
-		p.X++
 		break
 	}
 	return false
@@ -300,7 +292,26 @@ func MakeLevel(maxRooms int, width int, height int) *Level {
 	return l
 }
 
+func (l *Level) GetRandomPassableTile() (int, int) {
+	var x int = -1
+	var y int = -1
+	randomX := dice.MakeDie(1, l.Width)
+	randomY := dice.MakeDie(1, l.Height)
+	for {
+		x = randomX.Roll()
+		y = randomY.Roll()
+		tile := l.Map[x][y]
+		if tile.Passable == true && tile == &TileFloor {
+			break
+		}
+	}
+	return x, y
+}
+
 func (l *Level) AddEntity(e entity.Entity) {
+	pos := e.GetPosition()
+	pos.X, pos.Y = l.GetRandomPassableTile()
+	log.Printf("Placed entity '%s' at position [X:%d/Y:%d]\n", e.GetName(), pos.X, pos.Y)
 	l.Entities = append(l.Entities, e)
 }
 
