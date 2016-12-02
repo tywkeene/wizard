@@ -15,7 +15,6 @@ type ItemInfo struct {
 }
 
 type Item struct {
-	Info     *ItemInfo
 	Apply    ItemActionHandle
 	Name     string
 	ID       int
@@ -23,24 +22,12 @@ type Item struct {
 	Symbol   rune
 	Passable bool
 	Type     int
-}
-
-var ItemPlaceHolder = &Item{
-	Position: &position.Position{-1, -1, -1, -1, 1, 1},
-	Symbol:   'X',
-	Name:     "Placeholder Item",
-	Passable: true,
-	Type:     entity.EntityTypeItem,
-	Info: &ItemInfo{
-		Description: "A placeholder item used by the creator to test the universe",
-		SpawnChance: 1,
-	},
-	Apply: func(e *entity.Entity) {},
+	Info     *ItemInfo
 }
 
 var ( //Scrolls
-	ItemIdentifyScroll = &Item{
-		Position: &position.Position{-1, -1, -1, -1, 1, 1},
+	ItemIdentifyScroll = Item{
+		Position: nil,
 		Symbol:   '?',
 		Name:     "Scroll of identify",
 		Passable: true,
@@ -54,8 +41,8 @@ var ( //Scrolls
 )
 
 var ( //All coins
-	ItemSteelCoin = &Item{
-		Position: &position.Position{-1, -1, -1, -1, 1, 1},
+	ItemSteelCoin = Item{
+		Position: nil,
 		Symbol:   '$',
 		Name:     "Steel Coin",
 		Passable: true,
@@ -67,8 +54,8 @@ var ( //All coins
 		},
 	}
 
-	ItemCopperCoin = &Item{
-		Position: &position.Position{-1, -1, -1, -1, 1, 1},
+	ItemCopperCoin = Item{
+		Position: nil,
 		Symbol:   '$',
 		Name:     "Copper Coin",
 		Passable: true,
@@ -80,8 +67,8 @@ var ( //All coins
 		},
 	}
 
-	ItemSilverCoin = &Item{
-		Position: &position.Position{-1, -1, -1, -1, 1, 1},
+	ItemSilverCoin = Item{
+		Position: nil,
 		Symbol:   '$',
 		Name:     "Silver Coin ",
 		Passable: true,
@@ -93,8 +80,8 @@ var ( //All coins
 		},
 	}
 
-	ItemGoldCoin = &Item{
-		Position: &position.Position{-1, -1, -1, -1, 1, 1},
+	ItemGoldCoin = Item{
+		Position: nil,
 		Symbol:   '$',
 		Name:     "Gold Coin ",
 		Passable: true,
@@ -108,8 +95,8 @@ var ( //All coins
 )
 
 var ( //Consumables
-	ItemMarysHerb = &Item{
-		Position: &position.Position{-1, -1, -1, -1, 1, 1},
+	ItemMarysHerb = Item{
+		Position: nil,
 		Symbol:   '~',
 		Name:     "Mary's Herb",
 		Passable: true,
@@ -120,8 +107,8 @@ var ( //Consumables
 			SpawnChance: 10,
 		},
 	}
-	ItemMushroomEnlightenment = &Item{
-		Position: &position.Position{-1, -1, -1, -1, 1, 1},
+	ItemMushroomEnlightenment = Item{
+		Position: nil,
 		Symbol:   '~',
 		Name:     "Mushroom of Enlightenment",
 		Passable: true,
@@ -135,8 +122,8 @@ var ( //Consumables
 )
 
 var ( //All wands
-	ItemTeleWand = &Item{
-		Position: &position.Position{-1, -1, -1, -1, 1, 1},
+	ItemTeleWand = Item{
+		Position: nil,
 		Symbol:   '/',
 		Name:     "Wand of Teleportation",
 		Passable: true,
@@ -157,14 +144,14 @@ const (
 )
 
 var (
-	AllScrolls     = []*Item{ItemIdentifyScroll}
-	AllCoins       = []*Item{ItemSteelCoin, ItemCopperCoin, ItemSilverCoin, ItemGoldCoin}
-	AllConsumables = []*Item{ItemMarysHerb, ItemMushroomEnlightenment}
-	AllWands       = []*Item{ItemTeleWand}
-	AllItems       = [][]*Item{AllScrolls, AllCoins, AllConsumables, AllWands}
+	AllScrolls     = []Item{ItemIdentifyScroll}
+	AllCoins       = []Item{ItemSteelCoin, ItemCopperCoin, ItemSilverCoin, ItemGoldCoin}
+	AllConsumables = []Item{ItemMarysHerb, ItemMushroomEnlightenment}
+	AllWands       = []Item{ItemTeleWand}
+	AllItems       = [][]Item{AllScrolls, AllCoins, AllConsumables, AllWands}
 )
 
-func GetRandomItem() *Item {
+func GetRandomItem() Item {
 	randomItemType := dice.MakeDie(ItemTypeScroll, ItemTypeWand).Roll()
 	randomItem := dice.MakeDie(0, len(AllItems[randomItemType])).Roll()
 	item := AllItems[randomItemType][randomItem]

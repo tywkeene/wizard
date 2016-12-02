@@ -302,14 +302,13 @@ func (l *Level) InitializeRooms(maxRooms int) {
 	for _, r := range l.Rooms {
 		l.PlaceRoomDoor(r)
 	}
-
 }
 
 func (l *Level) GetRandomItemList(count int) []*item.Item {
 	list := make([]*item.Item, 0)
 	for i := 0; i < count; i++ {
 		randomItem := item.GetRandomItem()
-		list = append(list, randomItem)
+		list = append(list, &randomItem)
 	}
 	return list
 }
