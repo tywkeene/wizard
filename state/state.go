@@ -3,6 +3,7 @@ package state
 import (
 	"github.com/nsf/termbox-go"
 	"github.com/tywkeene/wizard/dice"
+	"github.com/tywkeene/wizard/entity"
 	"github.com/tywkeene/wizard/level"
 	"github.com/tywkeene/wizard/logging"
 	"github.com/tywkeene/wizard/monster"
@@ -14,9 +15,9 @@ type GameState struct {
 	Running        bool
 	Events         chan termbox.Event
 	CurrentLevel   *level.Level
+	Player         *monster.Monster
 	MessageLine    *status.StatusLine
 	PlayerStatus   *status.StatusLine
-	Player         *monster.Monster
 	TerminalWidth  int
 	TerminalHeight int
 }
@@ -54,10 +55,17 @@ func (s *GameState) Init() {
 	levelHeight := (height - 1)
 
 	roomCount := 20
-	s.CurrentLevel = level.MakeLevel(roomCount, levelWidth, levelHeight)
+	itemCount := 10
 
-	s.Player = monster.MakeMonster("wizard", '@')
-	s.CurrentLevel.AddEntity(s.Player)
+	//Initialize current level
+	s.CurrentLevel = level.MakeLevel(itemCount, roomCount, levelWidth, levelHeight)
+
+	//Make our player monster
+	s.Player = monster.MakeMonster("wizard", '@', entity.EntityTypePlayer)
+	s.Player.Position = s.CurrentLevel.GetRandomPassableTile()
+	s.CurrentLevel.Entities.Add(s.Player)
+
+	s.CurrentLevel.ListRoomsInLog()
 }
 
 func NewGameState() *GameState {
@@ -65,19 +73,19 @@ func NewGameState() *GameState {
 	return s
 }
 
-func (g *GameState) StartEventRoutine() {
-	go func(g *GameState) {
+func (s *GameState) StartEventRoutine() {
+	go func(s *GameState) {
 		for {
-			g.Events <- termbox.PollEvent()
+			s.Events <- termbox.PollEvent()
 		}
-	}(g)
+	}(s)
 }
 
-func (g *GameState) UpdateState() {
-	g.CurrentLevel.UpdateMap()
+func (s *GameState) UpdateState() {
+	s.CurrentLevel.UpdateMap()
 	termbox.Flush()
-	g.MessageLine.Clear()
-	g.PlayerStatus.Clear()
+	s.MessageLine.Clear()
+	s.PlayerStatus.Clear()
 }
 
 func (g GameState) ClearTerminal() {
@@ -88,27 +96,36 @@ func (g GameState) ClearTerminal() {
 	}
 }
 
-func (g *GameState) MainLoop() {
-	g.MessageLine.Println("Welcome to wizard!")
-	for g.Running == true {
-		g.UpdateState()
-		playerPos := g.Player.GetPosition()
+func (s *GameState) MainLoop() {
+	s.MessageLine.Println("Welcome to wizard!")
+	player := s.Player
+
+	for s.Running == true {
+		s.UpdateState()
+		playerPos := player.GetPosition()
+		tileEntities := s.CurrentLevel.GetEntitiesAtPosition(playerPos)
+		if len(tileEntities) > 1 {
+			s.MessageLine.Println("There are multiple items here...")
+		} else if len(tileEntities) == 1 {
+			s.MessageLine.Println("There is a " + tileEntities[0].GetName() + " here...")
+		}
 		select {
-		case ev := <-g.Events:
+		case ev := <-s.Events:
 			switch {
 			case ev.Key == termbox.KeyEsc || ev.Key == termbox.KeyCtrlC:
-				g.Running = false
+				s.Running = false
+				break
 			case ev.Ch == 'k': //up
-				g.Player.Move(playerPos.X, playerPos.Y-1)
+				player.Move(playerPos.X, playerPos.Y-1)
 				break
 			case ev.Ch == 'j': //down
-				g.Player.Move(playerPos.X, playerPos.Y+1)
+				player.Move(playerPos.X, playerPos.Y+1)
 				break
 			case ev.Ch == 'h': //left
-				g.Player.Move(playerPos.X-1, playerPos.Y)
+				player.Move(playerPos.X-1, playerPos.Y)
 				break
 			case ev.Ch == 'l': //right
-				g.Player.Move(playerPos.X+1, playerPos.Y)
+				player.Move(playerPos.X+1, playerPos.Y)
 				break
 			case ev.Key == termbox.KeyF12:
 				break

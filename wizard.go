@@ -9,15 +9,15 @@ import (
 
 func main() {
 	defer termbox.Close()
-	gameState := state.NewGameState()
-	gameState.Init()
+	s := state.NewGameState()
+	s.Init()
 	startMenu := menu.NewMenu(0, 0,
-		gameState.TerminalWidth, gameState.TerminalHeight, menu.StartMenuInputHandle)
+		s.TerminalWidth, s.TerminalHeight, menu.StartMenuInputHandle)
 	startMenu.AddOption("Wizard", menu.EmptyOptionHandle)
 	startMenu.AddOption("Start Game", menu.StartMenuStartGame)
 	startMenu.AddOption("Exit", menu.StartMenuExitGame)
-	startMenu.Execute(gameState)
-	gameState.ClearTerminal()
-	gameState.MainLoop()
+	startMenu.Execute(s)
+	s.ClearTerminal()
+	s.MainLoop()
 	log.Println("Main loop exited\n")
 }

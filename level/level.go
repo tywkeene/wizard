@@ -4,7 +4,7 @@ import (
 	"github.com/nsf/termbox-go"
 	"github.com/tywkeene/wizard/dice"
 	"github.com/tywkeene/wizard/entity"
-	"github.com/tywkeene/wizard/monster"
+	"github.com/tywkeene/wizard/item"
 	"github.com/tywkeene/wizard/position"
 	"github.com/tywkeene/wizard/room"
 	"log"
@@ -17,34 +17,31 @@ type Path struct {
 }
 
 type Tile struct {
-	Symbol   rune
-	Passable bool
-	Occupied entity.Entity
+	Symbol rune
 }
 
 type Level struct {
 	Width    int
 	Height   int
-	Player   *monster.Monster
-	Entities []entity.Entity
+	Entities *entity.EntityList
 	Map      [][]*Tile
 	Rooms    []*room.Room
 }
 
 var (
-	TileFloor      = Tile{'.', true, nil}
-	TileDoor       = Tile{'+', true, nil}
-	TileStairsUp   = Tile{'<', true, nil}
-	TileStairsDown = Tile{'>', true, nil}
+	TileFloor      = Tile{'.'}
+	TileDoor       = Tile{'+'}
+	TileStairsUp   = Tile{'<'}
+	TileStairsDown = Tile{'>'}
 
-	TileNil = Tile{' ', false, nil}
+	TileNil = Tile{' '}
 
-	TileSideWall          = Tile{'│', false, nil}
-	TileTopWall           = Tile{'─', false, nil}
-	TileTopLeftCorner     = Tile{'┌', false, nil}
-	TileTopRightCorner    = Tile{'┐', false, nil}
-	TileBottomLeftCorner  = Tile{'└', false, nil}
-	TileBottomRightCorner = Tile{'┘', false, nil}
+	TileSideWall          = Tile{'│'}
+	TileTopWall           = Tile{'─'}
+	TileTopLeftCorner     = Tile{'┌'}
+	TileTopRightCorner    = Tile{'┐'}
+	TileBottomLeftCorner  = Tile{'└'}
+	TileBottomRightCorner = Tile{'┘'}
 )
 
 const (
@@ -70,15 +67,12 @@ func RandomRoomSize() int {
 	size := dice.MakeDie(1, 4).Roll()
 	switch size {
 	case 1:
-		log.Println("Small room")
 		return SmallRoomMax
 		break
 	case 2:
-		log.Println("Medium room")
 		return MediumRoomMax
 		break
 	case 3:
-		log.Println("Large room")
 		return LargeRoomMax
 		break
 	}
@@ -231,7 +225,6 @@ func (l *Level) PlaceRoomDoor(r *room.Room) {
 			break
 		}
 	}
-	log.Printf("Placing door on %s wall @ [X:%d/Y:%d]", DirectionToString(direction), p.X, p.Y)
 	l.Map[p.X][p.Y] = &TileDoor
 }
 
@@ -264,17 +257,44 @@ func (l *Level) GenerateRandomRoom(x int, y int) *room.Room {
 	}
 	l.PlaceRoomFloor(r)
 	l.PlaceRoomWalls(r)
-	log.Printf("New room @ [X:%d/Y:%d] Size:[%dx%d]", r.Pos.X, r.Pos.Y, pos.Width, pos.Height)
 	return r
 }
 
-func MakeLevel(maxRooms int, width int, height int) *Level {
-	l := &Level{Width: width, Height: height, Player: nil,
-		Entities: nil, Map: nil, Rooms: nil}
-	l.Map = MakeFloor(width, height, &TileNil)
+func (l *Level) ListRoomsInLog() {
+	for _, r := range l.Rooms {
+		log.Printf("\tRoom @[X:%d/Y:%d] [%dx%d]",
+			r.Pos.X, r.Pos.Y, r.Pos.Width, r.Pos.Height)
+	}
+}
+
+func (l *Level) CheckCollision(p *position.Position) bool {
+	if l.IsPositionInsideLevel(p) == false {
+		return true
+	}
+	tile := l.Map[p.X][p.Y]
+	if tile != &TileFloor && tile != &TileDoor {
+		return true
+	}
+	return false
+}
+
+func (l *Level) GetRandomPassableTile() *position.Position {
+	var tilePos *position.Position
+	for {
+		x := dice.MakeDie(MinMapWidth, l.Width).Roll()
+		y := dice.MakeDie(MinMapHeight, l.Height).Roll()
+		tilePos = position.NewPosition(x, y, x, y, 1, 1)
+		if l.CheckCollision(tilePos) == false {
+			break
+		}
+	}
+	return tilePos
+}
+
+func (l *Level) InitializeRooms(maxRooms int) {
 	for i := 0; i < maxRooms; i++ {
-		r := l.GenerateRandomRoom(dice.MakeDie(2, l.Width).Roll(),
-			dice.MakeDie(2, l.Height).Roll())
+		r := l.GenerateRandomRoom(dice.MakeDie(MinRoomWidth, l.Width).Roll(),
+			dice.MakeDie(MinMapHeight, l.Height).Roll())
 		if r != nil {
 			l.Rooms = append(l.Rooms, r)
 		}
@@ -282,6 +302,49 @@ func MakeLevel(maxRooms int, width int, height int) *Level {
 	for _, r := range l.Rooms {
 		l.PlaceRoomDoor(r)
 	}
+
+}
+
+func (l *Level) GetRandomItemList(count int) []*item.Item {
+	list := make([]*item.Item, 0)
+	for i := 0; i < count; i++ {
+		randomItem := item.GetRandomItem()
+		list = append(list, randomItem)
+	}
+	return list
+}
+
+func (l *Level) InitializeItems(count int) {
+	list := l.GetRandomItemList(count)
+	for _, item := range list {
+		item.Position = l.GetRandomPassableTile()
+		l.Entities.Add(item)
+	}
+}
+
+func (l *Level) GetEntitiesAtPosition(p *position.Position) []entity.Entity {
+	list := make([]entity.Entity, 0)
+	for _, e := range l.Entities.List {
+		entityPos := e.GetPosition()
+		if p.X == entityPos.X &&
+			p.Y == entityPos.Y &&
+			e.GetType() != entity.EntityTypePlayer {
+			list = append(list, e)
+			log.Printf("Added %s to entity list @[X:%d/Y:%d]", e.GetName(), p.X, p.Y)
+		}
+	}
+	return list
+}
+
+func MakeLevel(itemCount int, maxRooms int, width int, height int) *Level {
+	l := &Level{Width: width,
+		Height:   height,
+		Entities: entity.NewEntityList(),
+		Map:      nil,
+		Rooms:    nil}
+
+	l.Map = MakeFloor(width, height, &TileNil)
+	l.InitializeRooms(maxRooms)
 	for x := 0; x < l.Width; x++ {
 		for y := 0; y < l.Height; y++ {
 			if l.Map[x][y] == &TileNil {
@@ -289,71 +352,37 @@ func MakeLevel(maxRooms int, width int, height int) *Level {
 			}
 		}
 	}
+	l.InitializeItems(itemCount)
 	return l
 }
 
-func (l *Level) GetRandomPassableTile() (int, int) {
-	var x int = -1
-	var y int = -1
-	randomX := dice.MakeDie(1, l.Width)
-	randomY := dice.MakeDie(1, l.Height)
-	for {
-		x = randomX.Roll()
-		y = randomY.Roll()
-		tile := l.Map[x][y]
-		if tile.Passable == true && tile == &TileFloor {
-			break
+func (l *Level) HandleCollisions() {
+	for _, e := range l.Entities.List {
+		p := e.GetPosition()
+		if l.CheckCollision(p) == true {
+			p.X = p.PrevX
+			p.Y = p.PrevY
 		}
-	}
-	return x, y
-}
-
-func (l *Level) AddEntity(e entity.Entity) {
-	pos := e.GetPosition()
-	pos.X, pos.Y = l.GetRandomPassableTile()
-	log.Printf("Placed entity '%s' at position [X:%d/Y:%d]\n", e.GetName(), pos.X, pos.Y)
-	l.Entities = append(l.Entities, e)
-}
-
-func (l *Level) CheckCollision(p *position.Position) bool {
-	if l.IsPositionInsideLevel(p) == false {
-		return true
-	}
-	if tile := l.Map[p.X][p.Y]; tile.Passable == false {
-		return true
-	}
-	return false
-}
-
-func (l *Level) CheckEntityCollisions() {
-	for _, e := range l.Entities {
-		entityPos := e.GetPosition()
-		if l.CheckCollision(entityPos) == true {
-			entityPos.X = entityPos.PrevX
-			entityPos.Y = entityPos.PrevY
-		}
-	}
-}
-
-func (l *Level) DrawEntities() {
-	for _, e := range l.Entities {
-		pos := e.GetPosition()
-		symbol := e.GetSymbol()
-		termbox.SetCell(pos.X, pos.Y, symbol, termbox.ColorWhite, termbox.ColorBlack)
 	}
 }
 
 func (l *Level) DrawMap() {
-	for x := 1; x < l.Width; x++ {
-		for y := 1; y < l.Height; y++ {
+	for x := 0; x < l.Width; x++ {
+		for y := 0; y < l.Height; y++ {
 			tile := l.Map[x][y]
 			termbox.SetCell(x, y, tile.Symbol, termbox.ColorWhite, termbox.ColorBlack)
 		}
 	}
 }
 
+func (l *Level) DrawEntities() {
+	for _, e := range l.Entities.List {
+		e.Draw()
+	}
+}
+
 func (l *Level) UpdateMap() {
 	l.DrawMap()
-	l.CheckEntityCollisions()
+	l.HandleCollisions()
 	l.DrawEntities()
 }

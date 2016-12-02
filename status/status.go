@@ -27,10 +27,12 @@ func (sl *StatusLine) Println(message string) {
 	for x, b := range message {
 		termbox.SetCell(x, sl.y, rune(b), termbox.ColorBlack, termbox.ColorWhite)
 	}
+	termbox.Flush()
 }
 
 func (sl *StatusLine) Clear() {
 	for x := 0; x < sl.width; x++ {
 		termbox.SetCell(x, sl.y, rune(' '), termbox.ColorBlack, termbox.ColorBlack)
 	}
+	termbox.Flush()
 }

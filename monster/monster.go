@@ -1,37 +1,62 @@
 package monster
 
 import (
+	"github.com/nsf/termbox-go"
 	"github.com/tywkeene/wizard/position"
-	"log"
 )
 
 type Monster struct {
-	Pos    *position.Position
-	Name   string
-	Symbol rune
+	Name     string
+	ID       int
+	Position *position.Position
+	Symbol   rune
+	Passable bool
+	Type     int
 }
 
-func MakeMonster(name string, symbol rune) *Monster {
-	log.Printf("Initialized monster: (%s) (%s)", name, string(symbol))
-	pos := position.NewPosition(-1, -1, -1, -1, 1, 1)
-	return &Monster{Pos: pos, Name: name, Symbol: symbol}
+func (m *Monster) GetName() string {
+	return m.Name
 }
 
-func (m *Monster) Move(newX int, newY int) {
-	m.Pos.PrevX = m.Pos.X
-	m.Pos.PrevY = m.Pos.Y
-	m.Pos.X = newX
-	m.Pos.Y = newY
+func (m *Monster) GetID() int {
+	return m.ID
 }
 
 func (m *Monster) GetPosition() *position.Position {
-	return m.Pos
+	return m.Position
 }
 
 func (m *Monster) GetSymbol() rune {
 	return m.Symbol
 }
 
-func (m *Monster) GetName() string {
-	return m.Name
+func (m *Monster) IsPassable() bool {
+	return m.Passable
+}
+
+func (m *Monster) GetType() int {
+	return m.Type
+}
+
+func (m *Monster) Move(x int, y int) {
+	m.Position.PrevX = m.Position.X
+	m.Position.PrevY = m.Position.Y
+	m.Position.X = x
+	m.Position.Y = y
+}
+
+func (m *Monster) Draw() {
+	p := m.GetPosition()
+	termbox.SetCell(p.X, p.Y, m.GetSymbol(), termbox.ColorWhite, termbox.ColorBlack)
+}
+
+func MakeMonster(name string, symbol rune, monsterType int) *Monster {
+	return &Monster{
+		Name:     name,
+		ID:       -1,
+		Position: position.NewPosition(-1, -1, -1, -1, 1, 1),
+		Symbol:   symbol,
+		Passable: false,
+		Type:     monsterType,
+	}
 }
