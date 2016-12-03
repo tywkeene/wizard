@@ -12,6 +12,7 @@ type ItemActionHandle func(e *entity.Entity)
 type ItemInfo struct {
 	Description string
 	SpawnChance int
+	ItemID      int
 }
 
 type Item struct {
@@ -25,6 +26,20 @@ type Item struct {
 	Info     *ItemInfo
 }
 
+const (
+	ItemIDIdentifyScroll = iota
+
+	ItemIDSteelCoin
+	ItemIDCopperCoin
+	ItemIDSilverCoin
+	ItemIDGoldCoin
+
+	ItemIDMarysHerb
+	ItemIDMushroomEnlighten
+
+	ItemIDTeleWand
+)
+
 var ( //Scrolls
 	ItemIdentifyScroll = Item{
 		Position: nil,
@@ -36,6 +51,7 @@ var ( //Scrolls
 		Info: &ItemInfo{
 			Description: "A useful piece of parchment describing a magical item",
 			SpawnChance: 10,
+			ItemID:      ItemIDIdentifyScroll,
 		},
 	}
 )
@@ -51,6 +67,7 @@ var ( //All coins
 		Info: &ItemInfo{
 			Description: "An old currency, some kingdoms do not accept it.",
 			SpawnChance: 20,
+			ItemID:      ItemIDSteelCoin,
 		},
 	}
 
@@ -64,6 +81,7 @@ var ( //All coins
 		Info: &ItemInfo{
 			Description: "Still almost useless. Popular amongst peasants",
 			SpawnChance: 20,
+			ItemID:      ItemIDCopperCoin,
 		},
 	}
 
@@ -77,6 +95,7 @@ var ( //All coins
 		Info: &ItemInfo{
 			Description: "Base currency for most kingdoms.",
 			SpawnChance: 10,
+			ItemID:      ItemIDSilverCoin,
 		},
 	}
 
@@ -90,6 +109,7 @@ var ( //All coins
 		Info: &ItemInfo{
 			Description: "Most valuable currency. Only the richest possess it.",
 			SpawnChance: 5,
+			ItemID:      ItemIDGoldCoin,
 		},
 	}
 )
@@ -105,6 +125,7 @@ var ( //Consumables
 		Info: &ItemInfo{
 			Description: "Reduces pain. Causes less loss of health points for a time",
 			SpawnChance: 10,
+			ItemID:      ItemIDMarysHerb,
 		},
 	}
 	ItemMushroomEnlightenment = Item{
@@ -117,6 +138,7 @@ var ( //Consumables
 		Info: &ItemInfo{
 			Description: "Causes great hallucinations. May broaden user's mind, granting additional magic points for a time",
 			SpawnChance: 10,
+			ItemID:      ItemIDMushroomEnlighten,
 		},
 	}
 )
@@ -132,6 +154,7 @@ var ( //All wands
 		Info: &ItemInfo{
 			Description: "A curious wand that bends space and time",
 			SpawnChance: 5,
+			ItemID:      ItemIDTeleWand,
 		},
 	}
 )

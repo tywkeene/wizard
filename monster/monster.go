@@ -6,14 +6,22 @@ import (
 	"github.com/tywkeene/wizard/position"
 )
 
+type Inventory struct {
+	List map[*item.Item]int
+}
+
 type Monster struct {
-	Name      string
-	ID        int
-	Position  *position.Position
-	Inventory []*item.Item
-	Symbol    rune
-	Passable  bool
-	Type      int
+	Name     string
+	ID       int
+	Position *position.Position
+	Items    *Inventory
+	Symbol   rune
+	Passable bool
+	Type     int
+}
+
+func (m *Monster) PickupItem(i *item.Item) {
+	m.Items.List[i]++
 }
 
 func (m *Monster) GetName() string {
@@ -56,11 +64,16 @@ func (m *Monster) Draw() {
 	termbox.SetCell(p.X, p.Y, m.GetSymbol(), termbox.ColorWhite, termbox.ColorBlack)
 }
 
+func NewInventory() *Inventory {
+	return &Inventory{make(map[*item.Item]int)}
+}
+
 func MakeMonster(name string, symbol rune, monsterType int) *Monster {
 	return &Monster{
 		Name:     name,
 		ID:       -1,
 		Position: position.NewPosition(-1, -1, -1, -1, 1, 1),
+		Items:    NewInventory(),
 		Symbol:   symbol,
 		Passable: false,
 		Type:     monsterType,

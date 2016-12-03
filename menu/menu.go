@@ -3,12 +3,10 @@ package menu
 import (
 	"github.com/nsf/termbox-go"
 	"github.com/tywkeene/wizard/position"
-	"github.com/tywkeene/wizard/state"
-	"log"
 )
 
-type OptionHandler func(*state.GameState, *Menu) int
-type InputHandler func(*state.GameState, *Menu)
+type OptionHandler func(*Menu) int
+type InputHandler func(chan termbox.Event, *Menu) int
 
 type MenuOption struct {
 	Description string
@@ -20,6 +18,11 @@ type Menu struct {
 	Options []*MenuOption
 	Handle  InputHandler
 }
+
+const (
+	OptionExit = iota
+	OptionStartGame
+)
 
 func NewMenu(x int, y int, width int, height int, handle InputHandler) *Menu {
 	pos := position.NewPosition(-1, -1, x, y, width, height)
@@ -54,31 +57,32 @@ func (m *Menu) Draw(hilight int) {
 	}
 }
 
-func (m *Menu) Execute(s *state.GameState) {
+func (m *Menu) Execute(events chan termbox.Event) int {
 	m.Draw(1)
-	m.Handle(s, m)
+	return m.Handle(events, m)
+}
+
+func EmptyOptionHandle(m *Menu) int {
+	return 0
 }
 
 //Start Menu Handles
-func EmptyOptionHandle(s *state.GameState, m *Menu) int {
-	return 0
-}
-func StartMenuStartGame(s *state.GameState, m *Menu) int {
-	s.Running = true
-	return 1
+func StartMenuStartGame(m *Menu) int {
+	return OptionStartGame
 }
 
-func StartMenuExitGame(s *state.GameState, m *Menu) int {
-	s.Running = false
-	return 1
+func StartMenuExitGame(m *Menu) int {
+	return OptionExit
 }
 
-func StartMenuInputHandle(s *state.GameState, m *Menu) {
-	var leaveMenu = false
-	var cursorPos = 1
+func StartMenuInputHandle(events chan termbox.Event, m *Menu) int {
+	var leaveMenu bool = false
+	var ret int = OptionExit
+	var cursorPos int = 1
+
 	for leaveMenu == false {
 		select {
-		case ev := <-s.Events:
+		case ev := <-events:
 			switch {
 			case ev.Ch == 'k': //up
 				if cursorPos > 1 {
@@ -91,13 +95,12 @@ func StartMenuInputHandle(s *state.GameState, m *Menu) {
 				}
 				break
 			case ev.Key == termbox.KeyEnter:
-				if ret := m.Options[cursorPos].Do(s, m); ret == 1 {
-					log.Printf("Selected menu option %d", cursorPos)
-					leaveMenu = true
-				}
+				ret = m.Options[cursorPos].Do(m)
+				leaveMenu = true
 				break
 			}
 		}
 		m.Draw(cursorPos)
 	}
+	return ret
 }
