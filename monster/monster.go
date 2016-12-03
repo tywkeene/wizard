@@ -2,20 +2,26 @@ package monster
 
 import (
 	"github.com/nsf/termbox-go"
+	"github.com/tywkeene/wizard/item"
 	"github.com/tywkeene/wizard/position"
 )
 
 type Monster struct {
-	Name     string
-	ID       int
-	Position *position.Position
-	Symbol   rune
-	Passable bool
-	Type     int
+	Name      string
+	ID        int
+	Position  *position.Position
+	Inventory []*item.Item
+	Symbol    rune
+	Passable  bool
+	Type      int
 }
 
 func (m *Monster) GetName() string {
 	return m.Name
+}
+
+func (m *Monster) SetID(id int) {
+	m.ID = id
 }
 
 func (m *Monster) GetID() int {

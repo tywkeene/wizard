@@ -12,6 +12,7 @@ type Entity interface {
 	IsPassable() bool
 	GetType() int
 	GetID() int
+	SetID(int)
 	Move(int, int)
 	Draw()
 }
@@ -42,8 +43,8 @@ func (el *EntityList) GetAllOfType(entityType int) []Entity {
 
 func (el *EntityList) Add(e Entity) {
 	p := e.GetPosition()
-	id := len(el.List)
-	el.List[id] = e
+	e.SetID(len(el.List))
+	el.List[e.GetID()] = e
 	log.Printf("Added entity [ID:%d] '%s' (%c) @[X:%d/Y:%d]",
 		e.GetID(), e.GetName(), e.GetSymbol(), p.X, p.Y)
 }

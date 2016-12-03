@@ -166,6 +166,10 @@ func (i *Item) GetName() string {
 	return i.Name
 }
 
+func (i *Item) SetID(id int) {
+	i.ID = id
+}
+
 func (i *Item) GetID() int {
 	return i.ID
 }
