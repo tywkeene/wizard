@@ -7,7 +7,7 @@ import (
 )
 
 type Inventory struct {
-	List map[*item.Item]int
+	List []*item.Item
 }
 
 type Monster struct {
@@ -21,7 +21,8 @@ type Monster struct {
 }
 
 func (m *Monster) PickupItem(i *item.Item) {
-	m.Items.List[i]++
+	i.Info.ItemID = len(m.Items.List)
+	m.Items.List = append(m.Items.List, i)
 }
 
 func (m *Monster) GetName() string {
@@ -65,7 +66,7 @@ func (m *Monster) Draw() {
 }
 
 func NewInventory() *Inventory {
-	return &Inventory{make(map[*item.Item]int)}
+	return &Inventory{make([]*item.Item, 0)}
 }
 
 func MakeMonster(name string, symbol rune, monsterType int) *Monster {

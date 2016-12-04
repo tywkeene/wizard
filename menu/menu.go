@@ -3,10 +3,11 @@ package menu
 import (
 	"github.com/nsf/termbox-go"
 	"github.com/tywkeene/wizard/position"
+	"github.com/tywkeene/wizard/state"
 )
 
-type OptionHandler func(*Menu) int
-type InputHandler func(chan termbox.Event, *Menu) int
+type OptionHandler func(*state.GameState, *Menu) int
+type InputHandler func(*state.GameState, *Menu) int
 
 type MenuOption struct {
 	Description string
@@ -57,32 +58,32 @@ func (m *Menu) Draw(hilight int) {
 	}
 }
 
-func (m *Menu) Execute(events chan termbox.Event) int {
+func (m *Menu) Execute(s *state.GameState) int {
 	m.Draw(1)
-	return m.Handle(events, m)
+	return m.Handle(s, m)
 }
 
-func EmptyOptionHandle(m *Menu) int {
+func EmptyOptionHandle(s *state.GameState, m *Menu) int {
 	return 0
 }
 
 //Start Menu Handles
-func StartMenuStartGame(m *Menu) int {
+func StartMenuStartGame(s *state.GameState, m *Menu) int {
 	return OptionStartGame
 }
 
-func StartMenuExitGame(m *Menu) int {
+func StartMenuExitGame(s *state.GameState, m *Menu) int {
 	return OptionExit
 }
 
-func StartMenuInputHandle(events chan termbox.Event, m *Menu) int {
+func StartMenuInputHandle(s *state.GameState, m *Menu) int {
 	var leaveMenu bool = false
 	var ret int = OptionExit
 	var cursorPos int = 1
 
 	for leaveMenu == false {
 		select {
-		case ev := <-events:
+		case ev := <-s.Events:
 			switch {
 			case ev.Ch == 'k': //up
 				if cursorPos > 1 {
@@ -95,7 +96,7 @@ func StartMenuInputHandle(events chan termbox.Event, m *Menu) int {
 				}
 				break
 			case ev.Key == termbox.KeyEnter:
-				ret = m.Options[cursorPos].Do(m)
+				ret = m.Options[cursorPos].Do(s, m)
 				leaveMenu = true
 				break
 			}
@@ -103,4 +104,49 @@ func StartMenuInputHandle(events chan termbox.Event, m *Menu) int {
 		m.Draw(cursorPos)
 	}
 	return ret
+}
+
+//Inventory menu
+
+func InventMenuInputHandle(s *state.GameState, m *Menu) int {
+	var leaveMenu bool = false
+	var cursorPos int = 1
+
+	m.AddOption(" ", EmptyOptionHandle)
+	for _, item := range s.Player.Items.List {
+		m.AddOption(item.GetName(), EmptyOptionHandle)
+	}
+
+	s.ClearTerminal()
+	m.Draw(cursorPos)
+	for leaveMenu == false {
+		select {
+		case ev := <-s.Events:
+			switch {
+			case ev.Key == termbox.KeyEsc:
+				return -1
+			case ev.Ch == 'k': //up
+				if cursorPos > 1 {
+					cursorPos--
+				}
+				break
+			case ev.Ch == 'j': //down
+				if cursorPos < len(m.Options)-1 {
+					cursorPos++
+				}
+				break
+			case ev.Ch == 'i': //Inspect
+				item := s.Player.Items.List[cursorPos-1]
+				s.MessageLine.Clear()
+				s.MessageLine.Println(item.Info.Description)
+				break
+			case ev.Ch == 'u': //Use
+				break
+			case ev.Ch == 'd': //Drop
+				break
+			}
+		}
+		m.Draw(cursorPos)
+	}
+	return 0
 }

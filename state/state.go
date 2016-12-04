@@ -4,7 +4,6 @@ import (
 	"github.com/nsf/termbox-go"
 	"github.com/tywkeene/wizard/dice"
 	"github.com/tywkeene/wizard/entity"
-	"github.com/tywkeene/wizard/item"
 	"github.com/tywkeene/wizard/level"
 	"github.com/tywkeene/wizard/logging"
 	"github.com/tywkeene/wizard/monster"
@@ -23,7 +22,7 @@ type GameState struct {
 	TerminalHeight int
 }
 
-func (s *GameState) Init() {
+func (s *GameState) Initialize() {
 	logging.OpenLog("./wizard.log")
 	log.Println("Initializng termbox...")
 	if err := termbox.Init(); err != nil {
@@ -93,63 +92,6 @@ func (g GameState) ClearTerminal() {
 	for x := 0; x < g.TerminalWidth; x++ {
 		for y := 0; y < g.TerminalHeight; y++ {
 			termbox.SetCell(x, y, ' ', termbox.ColorBlack, termbox.ColorBlack)
-		}
-	}
-}
-
-func (s *GameState) MainLoop() {
-	s.MessageLine.Println("Welcome to wizard!")
-	var updateState bool
-	player := s.Player
-
-	for s.Running == true {
-		s.UpdateState()
-		updateState = false
-
-		playerPos := player.GetPosition()
-		tileEntities := s.CurrentLevel.GetEntitiesAtPosition(playerPos)
-		if len(tileEntities) == 1 {
-			s.MessageLine.Println("There is a " + tileEntities[0].GetName())
-		}
-		for updateState == false {
-			select {
-			case ev := <-s.Events:
-				switch {
-				case ev.Key == termbox.KeyEsc || ev.Key == termbox.KeyCtrlC:
-					return
-				case ev.Ch == ',': //Pickup item at player's position
-					if len(tileEntities) == 0 {
-						s.MessageLine.Println("There's nothing here to pick up")
-						updateState = false
-						break
-					} else {
-						tileItem := tileEntities[0].(*item.Item)
-						player.PickupItem(tileItem)
-						s.CurrentLevel.Entities.Remove(tileItem)
-						s.MessageLine.Println("You pick up the " + tileItem.GetName())
-						updateState = true
-					}
-					break
-				case ev.Ch == 'i':
-					break
-				case ev.Ch == 'k': //up
-					player.Move(playerPos.X, playerPos.Y-1)
-					updateState = true
-					break
-				case ev.Ch == 'j': //down
-					player.Move(playerPos.X, playerPos.Y+1)
-					updateState = true
-					break
-				case ev.Ch == 'h': //left
-					player.Move(playerPos.X-1, playerPos.Y)
-					updateState = true
-					break
-				case ev.Ch == 'l': //right
-					player.Move(playerPos.X+1, playerPos.Y)
-					updateState = true
-					break
-				}
-			}
 		}
 	}
 }
