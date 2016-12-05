@@ -27,16 +27,20 @@ type Item struct {
 }
 
 const (
+	//Scrolls
 	ItemIDIdentifyScroll = iota
 
+	//Coins
 	ItemIDSteelCoin
 	ItemIDCopperCoin
 	ItemIDSilverCoin
 	ItemIDGoldCoin
 
+	//Consumables
 	ItemIDMarysHerb
 	ItemIDMushroomEnlighten
 
+	//Wands
 	ItemIDTeleWand
 )
 
@@ -63,7 +67,8 @@ var ( //All coins
 		Name:     "Steel Coin",
 		Passable: true,
 		Type:     entity.EntityTypeItem,
-		Apply:    func(e *entity.Entity) {},
+		Apply: func(e *entity.Entity) {
+		},
 		Info: &ItemInfo{
 			Description: "An old currency, some kingdoms do not accept it.",
 			SpawnChance: 20,

@@ -24,6 +24,14 @@ const (
 	OptionExit = iota
 	OptionStartGame
 )
+const (
+	SideBorder        = '│'
+	TopBorder         = '─'
+	TopLeftBorder     = '┌'
+	TopRightBorder    = '┐'
+	BottomLeftBorder  = '└'
+	BottomRightBorder = '┘'
+)
 
 func NewMenu(x int, y int, width int, height int, handle InputHandler) *Menu {
 	pos := position.NewPosition(-1, -1, x, y, width, height)
@@ -107,12 +115,11 @@ func StartMenuInputHandle(s *state.GameState, m *Menu) int {
 }
 
 //Inventory menu
-
 func InventMenuInputHandle(s *state.GameState, m *Menu) int {
 	var leaveMenu bool = false
 	var cursorPos int = 1
 
-	m.AddOption(" ", EmptyOptionHandle)
+	m.AddOption("", EmptyOptionHandle)
 	for _, item := range s.Player.Items.List {
 		m.AddOption(item.GetName(), EmptyOptionHandle)
 	}

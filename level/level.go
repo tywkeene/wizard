@@ -138,16 +138,16 @@ func (l *Level) PosToRoom(p *position.Position) *room.Room {
 }
 
 func (l *Level) PlaceRoomWalls(r *room.Room) {
-	topLeft := r.TopLeftCornerPos()
+	topLeft := r.Pos.TopLeftCornerPosition()
 	l.Map[topLeft.X][topLeft.Y] = &TileTopLeftCorner
 
-	topRight := r.TopRightCornerPos()
+	topRight := r.Pos.TopRightCornerPosition()
 	l.Map[topRight.X][topRight.Y] = &TileTopRightCorner
 
-	bottomLeft := r.BottomLeftCornerPos()
+	bottomLeft := r.Pos.BottomLeftCornerPosition()
 	l.Map[bottomLeft.X][bottomLeft.Y] = &TileBottomLeftCorner
 
-	bottomRight := r.BottomRightCornerPos()
+	bottomRight := r.Pos.BottomRightCornerPosition()
 	l.Map[bottomRight.X][bottomRight.Y] = &TileBottomRightCorner
 	//North
 	for x := r.Pos.X; x < (r.Pos.X + r.Pos.Width); x++ {
