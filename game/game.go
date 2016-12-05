@@ -3,7 +3,6 @@ package game
 import (
 	"github.com/nsf/termbox-go"
 	"github.com/tywkeene/wizard/item"
-	"github.com/tywkeene/wizard/menu"
 	"github.com/tywkeene/wizard/state"
 )
 
@@ -39,17 +38,6 @@ func MainLoop(s *state.GameState) {
 						s.MessageLine.Println("You pick up the " + tileItem.GetName())
 						updateState = true
 					}
-					break
-				case ev.Ch == 'i':
-
-					if len(player.Items.List) == 0 {
-						s.MessageLine.Println("You have no items")
-						updateState = false
-						break
-					}
-					inventoryMenu := menu.NewMenu(0, 0, s.TerminalWidth, s.TerminalHeight, menu.InventMenuInputHandle)
-					inventoryMenu.Execute(s)
-					updateState = true
 					break
 				case ev.Ch == 'k': //up
 					player.Move(playerPos.X, playerPos.Y-1)
