@@ -14,9 +14,14 @@ func main() {
 	s.Initialize()
 	s.ClearTerminal()
 	startMenu := menu.NewMenu(1, 1, s.TerminalWidth-2, s.TerminalHeight-2, menu.StartMenuInputHandle)
-	startMenu.AddOption("Start", menu.StartMenuStartGame)
-	startMenu.AddOption("Exit", menu.StartMenuExitGame)
-	startMenu.Execute(s)
-	game.MainLoop(s)
+	startMenu.AddOption("Start", menu.StartGameHandle)
+	startMenu.AddOption("Exit", menu.ExitGameHandle)
+	switch startMenu.Execute(s) {
+	case 1:
+		game.MainLoop(s)
+		break
+	case 2:
+		break
+	}
 	log.Println("Main loop exited\n")
 }

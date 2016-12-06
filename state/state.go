@@ -81,11 +81,15 @@ func (s *GameState) StartEventRoutine() {
 	}(s)
 }
 
-func (s *GameState) UpdateState() {
-	s.CurrentLevel.UpdateMap()
-	termbox.Flush()
+func (s *GameState) ClearMessageLines() {
 	s.MessageLine.Clear()
 	s.PlayerStatus.Clear()
+}
+
+func (s *GameState) UpdateState() {
+	s.CurrentLevel.UpdateMap()
+	s.ClearMessageLines()
+	termbox.Flush()
 }
 
 func (g GameState) ClearTerminal() {

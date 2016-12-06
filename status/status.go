@@ -3,42 +3,37 @@ package status
 import (
 	"fmt"
 	"github.com/nsf/termbox-go"
+	"github.com/tywkeene/wizard/position"
 )
 
 type StatusLine struct {
-	X     int
-	Y     int
-	Width int
+	Position *position.Position
 }
 
 func MakeStatusLine(x int, y int, width int) *StatusLine {
 	return &StatusLine{
-		X:     x,
-		Y:     y,
-		Width: width,
+		Position: position.NewPosition(x, y, x, y, width, 1),
 	}
 }
 
-func (sl *StatusLine) Printf(messageFmt string, args ...interface{}) {
+func (s *StatusLine) Printf(messageFmt string, args ...interface{}) {
 	var message string
 	fmt.Sprintf(message, messageFmt, args)
 	for x, b := range message {
-		termbox.SetCell(x, sl.Y, rune(b), termbox.ColorBlack, termbox.ColorWhite)
+		termbox.SetCell(x, s.Position.Y, rune(b), termbox.ColorWhite, termbox.ColorBlack)
 	}
 }
 
-func (sl *StatusLine) Println(message string) {
+func (s *StatusLine) Println(message string) {
 	var x int = 0
 	for _, b := range message {
-		termbox.SetCell(x, sl.Y, rune(b), termbox.ColorBlack, termbox.ColorWhite)
+		termbox.SetCell(x, s.Position.Y, rune(b), termbox.ColorWhite, termbox.ColorBlack)
 		x++
 	}
-	termbox.Flush()
 }
 
-func (sl *StatusLine) Clear() {
-	for x := 0; x < sl.Width; x++ {
-		termbox.SetCell(x, sl.Y, rune(' '), termbox.ColorBlack, termbox.ColorBlack)
+func (s *StatusLine) Clear() {
+	for x := 0; x < s.Position.Width; x++ {
+		termbox.SetCell(x, s.Position.Y, rune(' '), termbox.ColorWhite, termbox.ColorBlack)
 	}
-	termbox.Flush()
 }
