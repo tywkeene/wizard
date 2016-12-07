@@ -63,9 +63,10 @@ func (s *GameState) Initialize() {
 	//Make our player monster
 	s.Player = monster.MakeMonster("wizard", '@', entity.EntityTypePlayer)
 	s.Player.Position = s.CurrentLevel.GetRandomPassableTile()
-	s.CurrentLevel.Entities.Add(s.Player)
+	s.CurrentLevel.Player = s.Player
 
 	s.CurrentLevel.ListRoomsInLog()
+	s.ClearTerminal()
 }
 
 func NewGameState() *GameState {
@@ -87,15 +88,17 @@ func (s *GameState) ClearMessageLines() {
 }
 
 func (s *GameState) UpdateState() {
-	s.CurrentLevel.UpdateMap()
-	s.ClearMessageLines()
-	termbox.Flush()
+	//Clear the whole terminal
+	s.ClearTerminal()
+	//Handles entity collisions and draws entities, draws the level
+	s.CurrentLevel.UpdateWorld()
 }
 
-func (g GameState) ClearTerminal() {
-	for x := 0; x < g.TerminalWidth; x++ {
-		for y := 0; y < g.TerminalHeight; y++ {
+func (s *GameState) ClearTerminal() {
+	for x := 0; x < s.TerminalWidth+1; x++ {
+		for y := 0; y < s.TerminalHeight+1; y++ {
 			termbox.SetCell(x, y, ' ', termbox.ColorBlack, termbox.ColorBlack)
 		}
 	}
+	s.ClearMessageLines()
 }

@@ -5,21 +5,23 @@ import (
 	"github.com/tywkeene/wizard/item"
 	"github.com/tywkeene/wizard/menu"
 	"github.com/tywkeene/wizard/state"
-	"log"
 )
 
 func MainLoop(s *state.GameState) {
-	s.MessageLine.Println("Welcome to wizard!")
+	var updateState bool = false
 	player := s.Player
 
 	for s.Running == true {
 		s.UpdateState()
+		updateState = false
+
 		playerPos := player.GetPosition()
 		tileEntities := s.CurrentLevel.GetEntitiesAtPosition(playerPos)
 		if len(tileEntities) == 1 {
 			s.MessageLine.Println("There is a " + tileEntities[0].GetName() + " here")
 		}
-		for {
+		for updateState == false {
+			termbox.Flush()
 			select {
 			case ev := <-s.Events:
 				switch {
@@ -45,23 +47,24 @@ func MainLoop(s *state.GameState) {
 					for _, i := range invent.List {
 						inventMenu.AddOption(i.GetName(), nil)
 					}
-					if itemIndex := inventMenu.Execute(s); itemIndex > 0 {
-						i := player.Items.List[itemIndex]
-						log.Println(i)
-						s.MessageLine.Println(i.Info.Description)
-					}
+					inventMenu.Execute(s)
+					updateState = true
 					break
 				case ev.Ch == 'k': //up
 					player.Move(playerPos.X, playerPos.Y-1)
+					updateState = true
 					break
 				case ev.Ch == 'j': //down
 					player.Move(playerPos.X, playerPos.Y+1)
+					updateState = true
 					break
 				case ev.Ch == 'h': //left
 					player.Move(playerPos.X-1, playerPos.Y)
+					updateState = true
 					break
 				case ev.Ch == 'l': //right
 					player.Move(playerPos.X+1, playerPos.Y)
+					updateState = true
 					break
 				}
 			}

@@ -22,6 +22,7 @@ func (s *StatusLine) Printf(messageFmt string, args ...interface{}) {
 	for x, b := range message {
 		termbox.SetCell(x, s.Position.Y, rune(b), termbox.ColorWhite, termbox.ColorBlack)
 	}
+	termbox.Flush()
 }
 
 func (s *StatusLine) Println(message string) {
@@ -30,6 +31,17 @@ func (s *StatusLine) Println(message string) {
 		termbox.SetCell(x, s.Position.Y, rune(b), termbox.ColorWhite, termbox.ColorBlack)
 		x++
 	}
+	termbox.Flush()
+}
+
+func (s *StatusLine) ClearPrintln(message string) {
+	var x int = 0
+	s.Clear()
+	for _, b := range message {
+		termbox.SetCell(x, s.Position.Y, rune(b), termbox.ColorWhite, termbox.ColorBlack)
+		x++
+	}
+	termbox.Flush()
 }
 
 func (s *StatusLine) Clear() {

@@ -12,7 +12,6 @@ func main() {
 	defer termbox.Close()
 	s := state.NewGameState()
 	s.Initialize()
-	s.ClearTerminal()
 	startMenu := menu.NewMenu(1, 1, s.TerminalWidth-2, s.TerminalHeight-2, menu.StartMenuInputHandle)
 	startMenu.AddOption("Start", menu.StartGameHandle)
 	startMenu.AddOption("Exit", menu.ExitGameHandle)

@@ -83,6 +83,7 @@ func (m *Menu) DrawBorder() {
 	for y := m.Position.Y; y < (m.Position.Y + m.Position.Height); y++ {
 		termbox.SetCell(m.Position.X-1, y, SideBorder, termbox.ColorWhite, termbox.ColorBlack)
 	}
+	termbox.Flush()
 }
 
 func (m *Menu) Draw(hilite int) {
@@ -93,7 +94,6 @@ func (m *Menu) Draw(hilite int) {
 	background := termbox.ColorBlack
 
 	log.Printf("Cursor Position: %d", hilite)
-	m.DrawBorder()
 	for _, option := range m.Options {
 		if y == hilite {
 			foreground = termbox.ColorBlack
@@ -113,6 +113,7 @@ func (m *Menu) Draw(hilite int) {
 }
 
 func (m *Menu) Execute(s *state.GameState) int {
+	s.ClearTerminal()
 	m.Draw(1)
 	return m.Handle(s, m)
 }
@@ -135,9 +136,10 @@ func ExitGameHandle(s *state.GameState, m *Menu, data ...interface{}) int {
 }
 
 func StartMenuInputHandle(s *state.GameState, m *Menu) int {
-	cursorPos := 1
-	leaveMenu := false
-	for leaveMenu == false {
+	var cursorPos int = 1
+	m.DrawBorder()
+	s.MessageLine.Println("Welcome to Wizard!")
+	for {
 		select {
 		case ev := <-s.Events:
 			switch {
@@ -166,21 +168,35 @@ func StartMenuInputHandle(s *state.GameState, m *Menu) int {
 }
 
 func InventMenuInputHandle(s *state.GameState, m *Menu) int {
-	cursorPos := 1
-	leaveMenu := false
-	for leaveMenu == false {
+	var cursorPos int = 1
+	m.DrawBorder()
+	for {
 		select {
 		case ev := <-s.Events:
 			switch {
 			case ev.Key == termbox.KeyEsc:
-				leaveMenu = true
-				break
+				return 0
+			case ev.Ch == 'd':
+				itemIndex := (cursorPos - 1)
+				log.Printf("Inspecting item %d in inventory", itemIndex)
+				drop := s.Player.Items.List[itemIndex]
+
+				//Update the item's position
+				drop.Position = position.NewPosition(drop.Position.X, drop.Position.Y,
+					s.Player.Position.X, s.Player.Position.Y, 1, 1)
+
+				//Add it back to the level's entity list
+				s.CurrentLevel.Entities.Add(drop)
+
+				//Remove it from the player's inventory
+				s.Player.DropItem(itemIndex)
+				return 0
 			case ev.Ch == 'i':
 				//Cursor is 1-indexed, inventory is 0-indexed
 				itemIndex := (cursorPos - 1)
 				log.Printf("Inspecting item %d in inventory", itemIndex)
 				i := s.Player.Items.List[itemIndex]
-				s.MessageLine.Println(i.Info.Description)
+				s.MessageLine.ClearPrintln(i.Info.Description)
 				break
 			case ev.Ch == 'k':
 				if cursorPos > 1 {
@@ -193,6 +209,7 @@ func InventMenuInputHandle(s *state.GameState, m *Menu) int {
 				}
 				break
 			}
+			s.ClearTerminal()
 			m.Draw(cursorPos)
 		}
 	}

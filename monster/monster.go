@@ -25,6 +25,10 @@ func (m *Monster) PickupItem(i *item.Item) {
 	m.Items.List = append(m.Items.List, i)
 }
 
+func (m *Monster) DropItem(index int) {
+	m.Items.List = append(m.Items.List[:index], m.Items.List[index+1:]...)
+}
+
 func (m *Monster) GetName() string {
 	return m.Name
 }

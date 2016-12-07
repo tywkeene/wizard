@@ -5,6 +5,7 @@ import (
 	"github.com/tywkeene/wizard/dice"
 	"github.com/tywkeene/wizard/entity"
 	"github.com/tywkeene/wizard/item"
+	"github.com/tywkeene/wizard/monster"
 	"github.com/tywkeene/wizard/position"
 	"github.com/tywkeene/wizard/room"
 	"log"
@@ -23,6 +24,7 @@ type Tile struct {
 type Level struct {
 	Width    int
 	Height   int
+	Player   *monster.Monster
 	Entities *entity.EntityList
 	Map      [][]*Tile
 	Rooms    []*room.Room
@@ -261,6 +263,7 @@ func (l *Level) GenerateRandomRoom(x int, y int) *room.Room {
 }
 
 func (l *Level) ListRoomsInLog() {
+	log.Println("All rooms on this level:")
 	for _, r := range l.Rooms {
 		log.Printf("\tRoom @[X:%d/Y:%d] [%dx%d]",
 			r.Pos.X, r.Pos.Y, r.Pos.Width, r.Pos.Height)
@@ -365,9 +368,17 @@ func (l *Level) HandleCollisions() {
 	}
 }
 
-func (l *Level) DrawMap() {
+func (l *Level) ClearMap() {
 	for x := 0; x < l.Width; x++ {
 		for y := 0; y < l.Height; y++ {
+			termbox.SetCell(x, y, ' ', termbox.ColorBlack, termbox.ColorBlack)
+		}
+	}
+}
+
+func (l *Level) DrawMap() {
+	for x := 1; x < l.Width; x++ {
+		for y := 1; y < l.Height; y++ {
 			tile := l.Map[x][y]
 			termbox.SetCell(x, y, tile.Symbol, termbox.ColorWhite, termbox.ColorBlack)
 		}
@@ -375,13 +386,22 @@ func (l *Level) DrawMap() {
 }
 
 func (l *Level) DrawEntities() {
+	l.HandleCollisions()
 	for _, e := range l.Entities.List {
 		e.Draw()
 	}
 }
 
-func (l *Level) UpdateMap() {
+func (l *Level) UpdatePlayer() {
+	if l.CheckCollision(l.Player.Position) == true {
+		l.Player.Position.X = l.Player.Position.PrevX
+		l.Player.Position.Y = l.Player.Position.PrevY
+	}
+	l.Player.Draw()
+}
+
+func (l *Level) UpdateWorld() {
 	l.DrawMap()
-	l.HandleCollisions()
 	l.DrawEntities()
+	l.UpdatePlayer()
 }
