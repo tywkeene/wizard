@@ -183,6 +183,8 @@ func GetRandomItem() Item {
 	randomItemType := dice.MakeDie(ItemTypeScroll, ItemTypeWand).Roll()
 	randomItem := dice.MakeDie(0, len(AllItems[randomItemType])).Roll()
 	item := AllItems[randomItemType][randomItem]
+	id := dice.MakeDie(1000, 2000).Roll()
+	item.SetID(id)
 	return item
 }
 

@@ -42,6 +42,7 @@ func (el *EntityList) GetAllOfType(entityType int) []Entity {
 }
 
 func (el *EntityList) LogEntityList() {
+	log.Printf("There are %d items in this list", len(el.List))
 	for _, e := range el.List {
 		p := e.GetPosition()
 		log.Printf("[ID:%d] '%s' (%c) @[X:%d/Y:%d] Type: %s",
@@ -51,7 +52,6 @@ func (el *EntityList) LogEntityList() {
 
 func (el *EntityList) Add(e Entity) {
 	p := e.GetPosition()
-	e.SetID(len(el.List))
 	el.List[e.GetID()] = e
 	log.Printf("Added entity [ID:%d] '%s' (%c) @[X:%d/Y:%d]",
 		e.GetID(), e.GetName(), e.GetSymbol(), p.X, p.Y)

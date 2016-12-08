@@ -2,31 +2,16 @@ package monster
 
 import (
 	"github.com/nsf/termbox-go"
-	"github.com/tywkeene/wizard/item"
 	"github.com/tywkeene/wizard/position"
 )
-
-type Inventory struct {
-	List []*item.Item
-}
 
 type Monster struct {
 	Name     string
 	ID       int
 	Position *position.Position
-	Items    *Inventory
 	Symbol   rune
 	Passable bool
 	Type     int
-}
-
-func (m *Monster) PickupItem(i *item.Item) {
-	i.Info.ItemID = len(m.Items.List)
-	m.Items.List = append(m.Items.List, i)
-}
-
-func (m *Monster) DropItem(index int) {
-	m.Items.List = append(m.Items.List[:index], m.Items.List[index+1:]...)
 }
 
 func (m *Monster) GetName() string {
@@ -69,16 +54,11 @@ func (m *Monster) Draw() {
 	termbox.SetCell(p.X, p.Y, m.GetSymbol(), termbox.ColorWhite, termbox.ColorBlack)
 }
 
-func NewInventory() *Inventory {
-	return &Inventory{make([]*item.Item, 0)}
-}
-
 func MakeMonster(name string, symbol rune, monsterType int) *Monster {
 	return &Monster{
 		Name:     name,
 		ID:       -1,
 		Position: position.NewPosition(-1, -1, -1, -1, 1, 1),
-		Items:    NewInventory(),
 		Symbol:   symbol,
 		Passable: false,
 		Type:     monsterType,

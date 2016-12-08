@@ -4,7 +4,6 @@ import (
 	"github.com/nsf/termbox-go"
 	"github.com/tywkeene/wizard/dice"
 	"github.com/tywkeene/wizard/entity"
-	"github.com/tywkeene/wizard/item"
 	"github.com/tywkeene/wizard/monster"
 	"github.com/tywkeene/wizard/position"
 	"github.com/tywkeene/wizard/room"
@@ -307,23 +306,6 @@ func (l *Level) InitializeRooms(maxRooms int) {
 	}
 }
 
-func (l *Level) GetRandomItemList(count int) []*item.Item {
-	list := make([]*item.Item, 0)
-	for i := 0; i < count; i++ {
-		randomItem := item.GetRandomItem()
-		list = append(list, &randomItem)
-	}
-	return list
-}
-
-func (l *Level) InitializeItems(count int) {
-	list := l.GetRandomItemList(count)
-	for _, item := range list {
-		item.Position = l.GetRandomPassableTile()
-		l.Entities.Add(item)
-	}
-}
-
 func (l *Level) GetEntitiesAtPosition(p *position.Position) []entity.Entity {
 	list := make([]entity.Entity, 0)
 	for _, e := range l.Entities.List {
@@ -354,7 +336,6 @@ func MakeLevel(itemCount int, maxRooms int, width int, height int) *Level {
 			}
 		}
 	}
-	l.InitializeItems(itemCount)
 	return l
 }
 
